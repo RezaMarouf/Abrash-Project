@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>گزارش فروش با فیلتر سه‌گانه</title>
+  <style>
+    body {
+      font-family: "Vazir", sans-serif;
+      background-color: #f4f4f4;
+      padding: 20px;
+      direction: rtl;
+    }
+    .container {
+      max-width: 1100px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 12px;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    .selectors {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    .selector-group {
+      flex: 1;
+      min-width: 220px;
+    }
+    label {
+      font-weight: bold;
+      color: #2c3e50;
+      display: block;
+      margin-bottom: 5px;
+    }
+    select {
+      width: 100%;
+      padding: 6px 10px;
+      font-size: 14px;
+      border-radius: 5px;
+      border: 1px solid #2c3e50;
+      background: white;
+      cursor: pointer;
+    }
+    .selected-list {
+      background: #e9eef3;
+      border: 1px solid #2c3e50;
+      border-radius: 6px;
+      padding: 8px;
+      margin-top: 8px;
+      min-height: 36px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .selected-item {
+      background: #2c3e50;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 15px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .selected-item button {
+      background: #e74c3c;
+      border: none;
+      color: white;
+      font-weight: bold;
+      border-radius: 50%;
+      cursor: pointer;
+      width: 18px;
+      height: 18px;
+      line-height: 16px;
+      font-size: 14px;
+    }
+    .buttons {
+      text-align: center;
+      margin-top: 15px;
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+    }
+    .action-btn {
+      background-color: #2c3e50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 25px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.25s ease;
+    }
+    .action-btn:hover {
+      background-color: #1a2735;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 25px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px 12px;
+      font-size: 15px;
+      text-align: center;
+    }
+    th {
+      background-color: #2c3e50;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>گزارش فروش با فیلتر کارخانه، محصول و نوع فروش</h1>
+    <div class="selectors">
+      <div class="selector-group">
+        <label for="factory-select">انتخاب کارخانه</label>
+        <select id="factory-select"><option value="">-- انتخاب کارخانه --</option></select>
+        <div id="selected-factories" class="selected-list"></div>
+      </div>
+      <div class="selector-group">
+        <label for="product-select">انتخاب محصول</label>
+        <select id="product-select"><option value="">-- انتخاب محصول --</option></select>
+        <div id="selected-products" class="selected-list"></div>
+      </div>
+      <div class="selector-group">
+        <label for="type-select">انتخاب نوع فروش</label>
+        <select id="type-select"><option value="">-- انتخاب نوع فروش --</option></select>
+        <div id="selected-types" class="selected-list"></div>
+      </div>
+    </div>
+    <div class="buttons">
+      <button id="show-table" class="action-btn">گزارش جدول</button>
+      <button id="show-chart" class="action-btn">گزارش نمودار</button>
+    </div>
+    <div id="loading" style="text-align:center;color:#888;margin-top:30px;">در حال بارگذاری داده‌ها...</div>
+    <div id="report-table-container"></div>
+  </div>
+
+  <script>
+    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSbo5OpFQ6AWpo1vzXAA8TBa8pelpMkGnFfiE9w4gS64wnPh1DBkqn0jeIdebIXXA/pub?gid=1202059914&single=true&output=csv";
+    const factorySelect = document.getElementById("factory-select");
+    const productSelect = document.getElementById("product-select");
+    const typeSelect = document.getElementById("type-select");
+    const selectedLists = {
+      factories: document.getElementById("selected-factories"),
+      products: document.getElementById("selected-products"),
+      types: document.getElementById("selected-types")
+    };
+    const selections = { factories: [], products: [], types: [] };
+    let headers = [], csvData = [];
+
+    function addItem(key, selectElem, listElem, arr) {
+      const v = selectElem.value;
+      if (v && !arr.includes(v)) {
+        arr.push(v);
+        const div = document.createElement("div");
+        div.className = "selected-item";
+        div.textContent = v;
+        const btn = document.createElement("button");
+        btn.textContent = "×";
+        btn.onclick = () => {
+          arr.splice(arr.indexOf(v), 1);
+          listElem.removeChild(div);
+        };
+        div.appendChild(btn);
+        listElem.appendChild(div);
+      }
+      selectElem.value = "";
+    }
+
+    function populate(selectElem, arr) {
+      arr.sort().forEach(v => {
+        const o = document.createElement("option");
+        o.value = v; o.textContent = v;
+        selectElem.appendChild(o);
+      });
+    }
+
+    function formatNumber(n) {
+      return Number(n).toLocaleString("en-US", { maximumFractionDigits: 0 });
+    }
+
+    function formatPercent(p) {
+      return Math.round(parseFloat(p)) + "%";
+    }
+
+    function generateTable(filteredData) {
+      const container = document.getElementById("report-table-container");
+      container.innerHTML = "";
+
+      if (filteredData.length === 0) {
+        container.innerHTML = "<p style='text-align:center;color:#c00;'>داده‌ای یافت نشد.</p>";
+        return;
+      }
+
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const tbody = document.createElement("tbody");
+
+      const headerRow = document.createElement("tr");
+      headers.forEach(h => {
+        const th = document.createElement("th");
+        th.textContent = h;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+
+      filteredData.forEach(row => {
+        const tr = document.createElement("tr");
+        row.forEach((cell, i) => {
+          const td = document.createElement("td");
+          const h = headers[i];
+          if (h.includes("قیمت")) {
+            td.textContent = formatNumber(cell);
+          } else if (h.includes("درصد")) {
+            td.textContent = formatPercent(cell);
+          } else {
+            td.textContent = cell;
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(thead);
+      table.appendChild(tbody);
+      container.appendChild(table);
+    }
+
+    function init() {
+      fetch(csvUrl).then(r => r.text()).then(txt => {
+        const rows = txt.trim().split("\n").map(r =>
+          r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c =>
+            c.replace(/^"|"$/g, "").trim()
+          )
+        );
+        headers = rows.shift();
+        csvData = rows;
+        const fi = headers.indexOf("کارخانه");
+        const pi = headers.indexOf("نام محصول");
+        const ti = headers.indexOf("نوع فروش");
+        const setF = new Set(), setP = new Set(), setT = new Set();
+        csvData.forEach(r => {
+          setF.add(r[fi]);
+          setP.add(r[pi]);
+          setT.add(r[ti]);
+        });
+        populate(factorySelect, [...setF]);
+        populate(productSelect, [...setP]);
+        populate(typeSelect, [...setT]);
+        document.getElementById("loading").style.display = "none";
+      }).catch(e => {
+        document.getElementById("loading").textContent = "خطا در بارگذاری داده‌ها: " + e.message;
+      });
+    }
+
+    factorySelect.onchange = () => addItem("factories", factorySelect, selectedLists.factories, selections.factories);
+    productSelect.onchange = () => addItem("products", productSelect, selectedLists.products, selections.products);
+    typeSelect.onchange = () => addItem("types", typeSelect, selectedLists.types, selections.types);
+
+    document.getElementById("show-table").onclick = () => {
+      const fi = headers.indexOf("کارخانه");
+      const pi = headers.indexOf("نام محصول");
+      const ti = headers.indexOf("نوع فروش");
+
+      const filtered = csvData.filter(r =>
+        (selections.factories.length === 0 || selections.factories.includes(r[fi])) &&
+        (selections.products.length === 0 || selections.products.includes(r[pi])) &&
+        (selections.types.length === 0 || selections.types.includes(r[ti]))
+      );
+      generateTable(filtered);
+    };
+
+    document.getElementById("show-chart").onclick = () => alert("نمودار در دست طراحی است.");
+
+    init();
+  </script>
+</body>
+</html>
