@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>گزارش فروش با فیلتر سه‌گانه</title>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
   <style>
     body {
       font-family: "Vazir", sans-serif;
@@ -144,6 +145,7 @@
     </div>
     <div id="loading" style="text-align:center;color:#888;margin-top:30px;">در حال بارگذاری داده‌ها...</div>
     <div id="report-table-container"></div>
+    <div id="chart" style="margin-top: 40px;"></div>
   </div>
 
   <script>
@@ -281,7 +283,76 @@
       generateTable(filtered);
     };
 
-    document.getElementById("show-chart").onclick = () => alert("نمودار در دست طراحی است.");
+    document.getElementById("show-chart").onclick = () => {
+      const fi = headers.indexOf("کارخانه");
+      const pi = headers.indexOf("نام محصول");
+      const ti = headers.indexOf("نوع فروش");
+      const basePriceIndex = headers.findIndex(h => h.includes("قیمت پایه"));
+      const finalPriceIndex = headers.findIndex(h => h.includes("قیمت نهایی"));
+
+      const filtered = csvData.filter(r =>
+        (selections.factories.length === 0 || selections.factories.includes(r[fi])) &&
+        (selections.products.length === 0 || selections.products.includes(r[pi])) &&
+        (selections.types.length === 0 || selections.types.includes(r[ti]))
+      );
+
+      if (filtered.length === 0) {
+        document.getElementById("chart").innerHTML = "<p style='text-align:center;color:#c00;'>داده‌ای برای نمودار یافت نشد.</p>";
+        return;
+      }
+
+      const labels = filtered.map(r => r[pi] + " (" + r[fi] + ")");
+      const basePrices = filtered.map(r => parseFloat(r[basePriceIndex]));
+      const finalPrices = filtered.map(r => parseFloat(r[finalPriceIndex]));
+
+      const options = {
+        chart: { type: "bar", height: 400, toolbar: { show: false } },
+        plotOptions: {
+          bar: { horizontal: false, columnWidth: "60%", endingShape: "rounded" }
+        },
+        dataLabels: {
+          enabled: true,
+          formatter: val => Math.round(val).toLocaleString("en-US")
+        },
+        stroke: { show: true, width: 2, colors: ["transparent"] },
+        series: [
+          { name: "قیمت پایه", data: basePrices },
+          { name: "قیمت نهایی", data: finalPrices }
+        ],
+        xaxis: {
+          categories: labels,
+          labels: { rotate: -45 }
+        },
+        yaxis: {
+          title: { text: "قیمت (ریال)" },
+          labels: {
+            formatter: val => Math.round(val).toLocaleString("en-US")
+          }
+        },
+        fill: {
+          opacity: 1,
+          type: "gradient",
+          gradient: {
+            shade: "light",
+            type: "vertical",
+            opacityFrom: 0.9,
+            opacityTo: 1,
+            stops: [0, 90, 100]
+          }
+        },
+        tooltip: {
+          y: {
+            formatter: val => Math.round(val).toLocaleString("en-US")
+          }
+        },
+        colors: ['#008FFB', '#00E396']
+      };
+
+      const chartContainer = document.getElementById("chart");
+      chartContainer.innerHTML = "";
+      const chart = new ApexCharts(chartContainer, options);
+      chart.render();
+    };
 
     init();
   </script>
