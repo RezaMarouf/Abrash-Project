@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پروژه پیش فاکتور</title>
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker-0.4.5.min.css">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            text-align: right;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .hidden {
+            display: none;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .form-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-container label {
+            font-weight: bold;
+            grid-column: span 1;
+            align-self: center;
+        }
+        .form-container input, .form-container select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #pre-invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        #pre-invoice-table th, #pre-invoice-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+        #pre-invoice-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        #pre-invoice-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        #pre-invoice-table td input, #pre-invoice-table td select {
+            width: 100%;
+            border: none;
+            background: transparent;
+            text-align: center;
+        }
+        #pre-invoice-table tfoot td {
+            font-weight: bold;
+            background-color: #e0e0e0;
+        }
+        #summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        #summary-table td {
+            border: 2px solid #333;
+            padding: 10px;
+            font-weight: bold;
+        }
+        #summary-table td:first-child {
+            background-color: #f2f2f2;
+            text-align: right;
+            width: 60%;
+        }
+        #summary-table td:last-child {
+            background-color: #e0e0e0;
+            text-align: left;
+            width: 40%;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="main-page" class="container">
+        <h1>وب‌سایت مدیریت پروژه</h1>
+        <button id="project-button">پروژه</button>
+    </div>
+
+    <div id="project-menu-page" class="container hidden">
+        <h2>صفحه مدیریت پروژه</h2>
+        <button id="new-project-button">پروژه جدید</button>
+        <button id="retrieve-button">بازیابی اطلاعات پروژه های قبلی</button>
+        <button id="compare-button">مقایسه نموداری پروژه ها</button>
+        <button id="back-to-main-button">بازگشت</button>
+    </div>
+
+    <div id="new-project-page" class="container hidden">
+        <h2 style="position:relative;">
+            صفحه پیش‌فاکتور (فقط-خواندنی)
+            <span id="page-counter" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 16px;">
+                صفحه ۱ از ۱
+            </span>
+        </h2>
+
+        <div class="form-container">
+            <div>
+                <label for="project-name-input">نام پروژه:</label>
+                <input type="text" id="project-name-input">
+            </div>
+            <div>
+                <label for="project-date">تاریخ:</label>
+                <input type="text" id="project-date" placeholder="انتخاب تاریخ">
+            </div>
+            <div>
+                <label for="factory-name-select">نام کارخانه:</label>
+                <select id="factory-name-select">
+                    <option value="">انتخاب کنید...</option>
+                </select>
+            </div>
+            <div>
+                <label for="manager-name">نام مدیر پروژه:</label>
+                <input type="text" id="manager-name">
+            </div>
+            <div>
+                <label for="manager-phone">شماره تلفن مدیر:</label>
+                <input type="tel" id="manager-phone">
+            </div>
+            <div>
+                <label for="project-address">آدرس پروژه:</label>
+                <input type="text" id="project-address">
+            </div>
+            <div>
+                <label for="referrer-name">نام معرف:</label>
+                <input type="text" id="referrer-name">
+            </div>
+            <div>
+                <label for="referrer-phone">شماره تلفن معرف:</label>
+                <input type="tel" id="referrer-phone">
+            </div>
+            <div>
+                <label for="project-discount">درصد تخفیف پروژه:</label>
+                <input type="number" id="project-discount" min="0" max="100">
+            </div>
+        </div>
+        
+        <hr>
+
+        <h3>اقلام پروژه</h3>
+        <table id="pre-invoice-table">
+            <colgroup>
+                <col span="1" style="width: 5%;">
+                <col span="1" style="width: 7%;">
+                <col span="1" style="width: 25%;">
+                <col span="1" style="width: 8%;">
+                <col span="1" style="width: 10%;">
+                <col span="1" style="width: 15%;">
+                <col span="1" style="width: 5%;">
+                <col span="1" style="width: 13%;">
+                <col span="1" style="width: 12%;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>ردیف</th>
+                    <th>کد</th>
+                    <th>نام محصول</th>
+                    <th>تعداد</th>
+                    <th>قیمت پایه</th>
+                    <th>قیمت کل</th>
+                    <th>% تخفیف</th>
+                    <th>مبلغ تخفیف</th>
+                    <th>قیمت نهایی</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="5">جمع کل این صفحه:</td>
+                    <td id="page-total-price" data-value="0">0</td>
+                    <td></td>
+                    <td id="page-total-discount" data-value="0">0</td>
+                    <td id="page-final-price" data-value="0">0</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <hr>
+        
+        <h3>خلاصه پروژه</h3>
+        <table id="summary-table">
+            <tbody>
+                <tr>
+                    <td>جمع کل رقم پروژه قبل از تخفیف</td>
+                    <td id="grand-total-price" data-value="0">0</td>
+                </tr>
+                <tr>
+                    <td>جمع کل تخفیف پروژه</td>
+                    <td id="grand-total-discount" data-value="0">0</td>
+                </tr>
+                <tr>
+                <td>جمع کل رقم پروژه پس از تخفیف</td>
+                    <td id="grand-final-price" data-value="0">0</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="margin-top: 20px;">
+            <button id="save-button" disabled>ثبت پیش‌فاکتور (فعلا غیرفعال)</button>
+            <button id="prev-page-button" disabled>صفحه قبل</button>
+            <button id="next-page-button" disabled>صفحه بعد</button>
+            <button id="back-to-menu-button">بازگشت</button>
+        </div>
+    </div>
+    
+    <div id="next-page-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <p>تمام ۱۰ سطر پر شده‌اند. آیا مایل به اضافه کردن موارد بعدی به پیش فاکتور هستید؟</p>
+            <button id="modal-yes-next-page">بله</button>
+            <button id="modal-no-next-page">خیر</button>
+        </div>
+    </div>
+    
+    <div id="save-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <p>مایل به ذخیره پیش فاکتور هستید؟</p>
+            <button id="modal-yes-save">بله</button>
+            <button id="modal-no-save">خیر</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker-0.4.5.min.js"></script>
+    <script>
+        if (typeof jQuery === 'undefined') {
+            alert('خطا: کتابخانه jQuery بارگذاری نشده است. لطفاً اتصال اینترنت خود را بررسی کنید.');
+        } else {
+            document.addEventListener('DOMContentLoaded', () => {
+
+                const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSbo5OpFQ6AWpo1vzXAA8TBa8pelpMkGnFfiE9w4gS64wnPh1DBkqn0jeIdebIXXA/pub?output=csv";
+                let productsData = []; 
+                let grandTotals = {
+                    totalPrice: 0,
+                    totalDiscount: 0,
+                    finalPrice: 0
+                };
+                let currentPage = 1;
+                let lastRowNumber = 0;
+                let invoicePages = [];
+
+                const mainPage = document.getElementById('main-page');
+                const projectMenuPage = document.getElementById('project-menu-page');
+                const newProjectPage = document.getElementById('new-project-page');
+                const projectButton = document.getElementById('project-button');
+                const newProjectButton = document.getElementById('new-project-button');
+                const backToMainButton = document.getElementById('back-to-main-button');
+                const preInvoiceTableBody = document.querySelector('#pre-invoice-table tbody');
+                const saveButton = document.getElementById('save-button');
+                const backToMenuButton = document.getElementById('back-to-menu-button');
+                const projectNameInput = document.getElementById('project-name-input');
+                const factoryNameSelect = document.getElementById('factory-name-select');
+                const projectDiscountInput = document.getElementById('project-discount');
+                const projectDateInput = document.getElementById('project-date');
+                const pageCounter = document.getElementById('page-counter');
+                const prevPageButton = document.getElementById('prev-page-button');
+                const nextPageButton = document.getElementById('next-page-button');
+                
+                const nextPageModal = document.getElementById('next-page-modal');
+                const saveModal = document.getElementById('save-modal');
+                const modalYesNextPage = document.getElementById('modal-yes-next-page');
+                const modalNoNextPage = document.getElementById('modal-no-next-page');
+                const modalYesSave = document.getElementById('modal-yes-save');
+                const modalNoSave = document.getElementById('modal-no-save');
+                
+                let rowCount = 0;
+                const MAX_ROWS = 10;
+
+                const showPage = (pageToShow) => {
+                    [mainPage, projectMenuPage, newProjectPage].forEach(page => page.classList.add('hidden'));
+                    pageToShow.classList.remove('hidden');
+                };
+
+                const parseCSV = (csvText) => {
+                    const lines = csvText.trim().split('\n');
+                    const headers = lines[0].split(',').map(header => header.trim().replace(/"/g, ''));
+                    const data = lines.slice(1).map(line => {
+                        const values = line.split(',');
+                        const rowData = {};
+                        headers.forEach((header, index) => {
+                            rowData[header] = values[index] ? values[index].trim().replace(/"/g, '') : '';
+                        });
+                        return rowData;
+                    });
+                    return data;
+                };
+
+                const processProductData = (rawData) => {
+                    const latestProducts = {};
+
+                    rawData.forEach(item => {
+                        const key = item['کد'] + '|' + item['کارخانه'];
+                        const itemDate = new Date(item['تاریخ']);
+                        
+                        if (!latestProducts[key] || new Date(latestProducts[key]['تاریخ']) < itemDate) {
+                            latestProducts[key] = item;
+                        }
+                    });
+
+                    return Object.values(latestProducts);
+                };
+
+                const fetchProductData = async () => {
+                    try {
+                        const response = await fetch(CSV_URL);
+                        const csvText = await response.text();
+                        const allProducts = parseCSV(csvText);
+                        
+                        productsData = processProductData(allProducts);
+
+                        if (productsData.length === 0) {
+                            alert('اطلاعاتی در فایل CSV شما وجود ندارد.');
+                        } else {
+                            populateFactoryDropdown(productsData);
+                        }
+                    } catch (error) {
+                        alert('خطا در دریافت اطلاعات محصولات: ' + error.message);
+                    }
+                };
+                
+                const populateFactoryDropdown = (data) => {
+                    const uniqueFactories = [...new Set(data.map(item => item['کارخانه']))];
+                    factoryNameSelect.innerHTML = '<option value="">انتخاب کنید...</option>';
+                    uniqueFactories.forEach(factory => {
+                        if (factory) {
+                            const option = document.createElement('option');
+                            option.value = factory;
+                            option.textContent = factory;
+                            factoryNameSelect.appendChild(option);
+                        }
+                    });
+                };
+                
+                const attachEventListenersToRow = (row) => {
+                    const codeInput = row.querySelector('.code-input');
+                    const nameInput = row.querySelector('.product-name-input');
+                    const quantityInput = row.querySelector('.quantity-input');
+                    const discountInput = row.querySelector('.discount-percent-input');
+
+                    codeInput.addEventListener('change', (e) => {
+                        const product = productsData.find(p => p['کد'] === e.target.value);
+                        if (product) {
+                            nameInput.value = product['نام محصول'];
+                        } else {
+                            nameInput.value = '';
+                        }
+                        updateRow(row);
+                    });
+
+                    nameInput.addEventListener('change', (e) => {
+                        const product = productsData.find(p => p['نام محصول'] === e.target.value);
+                        if (product) {
+                            codeInput.value = product['کد'];
+                        } else {
+                            codeInput.value = '';
+                        }
+                        updateRow(row);
+                    });
+                    
+                    codeInput.addEventListener('keydown', handleEnterKey);
+                    nameInput.addEventListener('keydown', handleEnterKey);
+                    quantityInput.addEventListener('keydown', handleEnterKey);
+                    discountInput.addEventListener('keydown', handleEnterKey);
+                    
+                    quantityInput.addEventListener('change', () => updateRow(row));
+                    discountInput.addEventListener('change', () => updateRow(row));
+                };
+
+                const createTableRow = (item = null) => {
+                    if (rowCount >= MAX_ROWS) {
+                        handleMaxRows();
+                        return;
+                    }
+                    
+                    const row = document.createElement('tr');
+                    rowCount++;
+                    lastRowNumber++;
+
+                    const code = item ? item.code : '';
+                    const name = item ? item.name : '';
+                    const quantity = item ? item.quantity : '';
+                    const basePrice = item ? item.basePrice : '';
+                    const totalPrice = item ? item.totalPrice : 0;
+                    const discountPercent = item ? item.discountPercent : (projectDiscountInput.value || '');
+                    const discountAmount = item ? item.discountAmount : 0;
+                    const finalPrice = item ? item.finalPrice : 0;
+                    
+                    row.innerHTML = `
+                        <td>${lastRowNumber}</td>
+                        <td><input type="text" class="code-input" list="code-datalist" value="${code}"></td>
+                        <td><input type="text" class="product-name-input" list="name-datalist" value="${name}"></td>
+                        <td><input type="number" class="quantity-input" min="1" value="${quantity}"></td>
+                        <td><input type="text" class="base-price-input" disabled value="${Math.round(parseFloat(basePrice)).toLocaleString('fa-IR')}"></td>
+                        <td><input type="text" class="total-price-output" disabled data-value="${totalPrice}" value="${Math.round(totalPrice).toLocaleString('fa-IR')}"></td>
+                        <td><input type="number" class="discount-percent-input" min="0" max="100" value="${discountPercent}"></td>
+                        <td><input type="text" class="discount-amount-output" disabled data-value="${discountAmount}" value="${Math.round(discountAmount).toLocaleString('fa-IR')}"></td>
+                        <td><input type="text" class="final-price-output" disabled data-value="${finalPrice}" value="${Math.round(finalPrice).toLocaleString('fa-IR')}"></td>
+                    `;
+                    preInvoiceTableBody.appendChild(row);
+                    
+                    if (projectDiscountInput.value !== '') {
+                        row.querySelector('.discount-percent-input').value = projectDiscountInput.value;
+                    }
+                    
+                    populateDatalists();
+                    attachEventListenersToRow(row);
+                    updateTotals();
+                };
+
+                const populateDatalists = () => {
+                    const codeDatalist = document.getElementById('code-datalist');
+                    const nameDatalist = document.getElementById('name-datalist');
+                    
+                    const selectedFactory = factoryNameSelect.value;
+                    const filteredProducts = productsData.filter(p => p['کارخانه'] === selectedFactory);
+                    
+                    const codeOptions = filteredProducts.map(p => `<option value="${p['کد']}"></option>`).join('');
+                    const nameOptions = filteredProducts.map(p => `<option value="${p['نام محصول']}"></option>`).join('');
+
+                    codeDatalist.innerHTML = codeOptions;
+                    nameDatalist.innerHTML = nameOptions;
+                };
+
+                const updateRow = (row) => {
+                    const code = row.querySelector('.code-input').value;
+                    const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+                    const discountPercent = parseFloat(row.querySelector('.discount-percent-input').value) || 0;
+
+                    const product = productsData.find(p => p['کد'] === code);
+
+                    if (product) {
+                        const basePrice = parseFloat(product['قیمت نهایی']) || 0;
+                        
+                        row.querySelector('.base-price-input').value = Math.round(basePrice).toLocaleString('fa-IR');
+                        
+                        const totalPrice = basePrice * quantity;
+                        row.querySelector('.total-price-output').value = Math.round(totalPrice).toLocaleString('fa-IR');
+                        row.querySelector('.total-price-output').dataset.value = totalPrice;
+
+                        const originalDiscount = parseFloat(projectDiscountInput.value) || 0;
+                        const discountInput = row.querySelector('.discount-percent-input');
+                        
+                        if (discountPercent > originalDiscount) {
+                            discountInput.style.color = 'green';
+                        } else if (discountPercent < originalDiscount) {
+                            discountInput.style.color = 'red';
+                        } else {
+                            discountInput.style.color = 'black';
+                        }
+                        
+                        const discountAmount = (totalPrice * discountPercent) / 100;
+                        const finalPrice = totalPrice - discountAmount;
+
+                        row.querySelector('.discount-amount-output').value = Math.round(discountAmount).toLocaleString('fa-IR');
+                        row.querySelector('.discount-amount-output').dataset.value = discountAmount;
+                        row.querySelector('.final-price-output').value = Math.round(finalPrice).toLocaleString('fa-IR');
+                        row.querySelector('.final-price-output').dataset.value = finalPrice;
+                    } else {
+                        const inputs = row.querySelectorAll('.base-price-input, .total-price-output, .discount-amount-output, .final-price-output');
+                        inputs.forEach(input => input.value = '');
+                        row.querySelector('.total-price-output').dataset.value = '0';
+                        row.querySelector('.discount-amount-output').dataset.value = '0';
+                        row.querySelector('.final-price-output').dataset.value = '0';
+                    }
+                    updateTotals();
+                };
+                
+                const updateTotals = () => {
+                    let pageTotalPrice = 0;
+                    let pageTotalDiscount = 0;
+                    let pageFinalPrice = 0;
+
+                    const rows = preInvoiceTableBody.querySelectorAll('tr');
+                    rows.forEach(row => {
+                        const totalPriceValue = parseFloat(row.querySelector('.total-price-output')?.dataset.value || '0');
+                        const discountAmountValue = parseFloat(row.querySelector('.discount-amount-output')?.dataset.value || '0');
+                        const finalPriceValue = parseFloat(row.querySelector('.final-price-output')?.dataset.value || '0');
+                        
+                        pageTotalPrice += totalPriceValue;
+                        pageTotalDiscount += discountAmountValue;
+                        pageFinalPrice += finalPriceValue;
+                    });
+
+                    document.getElementById('page-total-price').textContent = Math.round(pageTotalPrice).toLocaleString('fa-IR');
+                    document.getElementById('page-total-price').dataset.value = pageTotalPrice;
+                    document.getElementById('page-total-discount').textContent = Math.round(pageTotalDiscount).toLocaleString('fa-IR');
+                    document.getElementById('page-total-discount').dataset.value = pageTotalDiscount;
+                    document.getElementById('page-final-price').textContent = Math.round(pageFinalPrice).toLocaleString('fa-IR');
+                    document.getElementById('page-final-price').dataset.value = pageFinalPrice;
+
+                    const totalSumPrice = grandTotals.totalPrice + pageTotalPrice;
+                    const totalSumDiscount = grandTotals.totalDiscount + pageTotalDiscount;
+                    const totalSumFinal = grandTotals.finalPrice + pageFinalPrice;
+
+                    document.getElementById('grand-total-price').textContent = Math.round(totalSumPrice).toLocaleString('fa-IR');
+                    document.getElementById('grand-total-discount').textContent = Math.round(totalSumDiscount).toLocaleString('fa-IR');
+                    document.getElementById('grand-final-price').textContent = Math.round(totalSumFinal).toLocaleString('fa-IR');
+                };
+
+                const handleEnterKey = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault(); 
+                        const currentRow = e.target.closest('tr');
+                        const allInputsInRow = Array.from(currentRow.querySelectorAll('input:not([disabled])'));
+                        const currentInputIndex = allInputsInRow.indexOf(e.target);
+                        
+                        if (currentInputIndex > -1 && currentInputIndex < allInputsInRow.length - 1) {
+                            allInputsInRow[currentInputIndex + 1].focus();
+                        } else if (currentInputIndex === allInputsInRow.length - 1) {
+                            const code = currentRow.querySelector('.code-input').value;
+                            const quantityInput = currentRow.querySelector('.quantity-input');
+                            
+                            if (code && quantityInput.value.trim() !== '') {
+                                if (rowCount < MAX_ROWS) {
+                                    createTableRow();
+                                    const newRow = preInvoiceTableBody.lastElementChild;
+                                    newRow.querySelector('.code-input').focus();
+                                } else {
+                                    handleMaxRows();
+                                }
+                            } else {
+                                alert('لطفا فیلدهای "کد" و "تعداد" را تکمیل کنید.');
+                            }
+                        }
+                    }
+                };
+                
+                const handleMaxRows = () => {
+                    nextPageModal.style.display = 'block';
+                };
+
+                const startNewPage = () => {
+                    saveCurrentPageData();
+
+                    grandTotals.totalPrice += parseFloat(document.getElementById('page-total-price').dataset.value || '0');
+                    grandTotals.totalDiscount += parseFloat(document.getElementById('page-total-discount').dataset.value || '0');
+                    grandTotals.finalPrice += parseFloat(document.getElementById('page-final-price').dataset.value || '0');
+
+                    preInvoiceTableBody.innerHTML = '';
+                    rowCount = 0;
+                    currentPage++;
+                    createTableRow();
+                    updateTotals();
+                    updatePageCounter();
+                    updateNavigationButtons();
+                    nextPageModal.style.display = 'none';
+                };
+
+                const updatePageCounter = () => {
+                    const totalPages = invoicePages.length > 0 ? invoicePages.length + 1 : 1;
+                    pageCounter.textContent = `صفحه ${currentPage} از ${totalPages}`;
+                };
+
+                const updateNavigationButtons = () => {
+                    prevPageButton.disabled = currentPage === 1;
+                    nextPageButton.disabled = currentPage > invoicePages.length;
+                };
+
+                const saveCurrentPageData = () => {
+                    const currentPageData = [];
+                    const rows = preInvoiceTableBody.querySelectorAll('tr');
+                    rows.forEach(row => {
+                        const rowData = {};
+                        rowData.code = row.querySelector('.code-input').value;
+                        rowData.name = row.querySelector('.product-name-input').value;
+                        rowData.quantity = row.querySelector('.quantity-input').value;
+                        rowData.basePrice = row.querySelector('.base-price-input').value;
+                        rowData.totalPrice = row.querySelector('.total-price-output').dataset.value;
+                        rowData.discountPercent = row.querySelector('.discount-percent-input').value;
+                        rowData.discountAmount = row.querySelector('.discount-amount-output').dataset.value;
+                        rowData.finalPrice = row.querySelector('.final-price-output').dataset.value;
+                        currentPageData.push(rowData);
+                    });
+
+                    const pageTotals = {
+                        totalPrice: parseFloat(document.getElementById('page-total-price').dataset.value || '0'),
+                        totalDiscount: parseFloat(document.getElementById('page-total-discount').dataset.value || '0'),
+                        finalPrice: parseFloat(document.getElementById('page-final-price').dataset.value || '0')
+                    };
+
+                    invoicePages[currentPage - 1] = {
+                        items: currentPageData,
+                        totals: pageTotals
+                    };
+                };
+
+                const loadPageData = (pageNumber) => {
+                    if (pageNumber < 1 || pageNumber > invoicePages.length) {
+                        return;
+                    }
+                    
+                    const pageData = invoicePages[pageNumber - 1];
+                    preInvoiceTableBody.innerHTML = '';
+                    
+                    lastRowNumber = (pageNumber - 1) * MAX_ROWS;
+                    rowCount = 0;
+                    
+                    if (pageData) {
+                        pageData.items.forEach(item => {
+                            if (item.code || item.name) {
+                                const row = document.createElement('tr');
+                                rowCount++;
+                                lastRowNumber++;
+                                row.innerHTML = `
+                                    <td>${lastRowNumber}</td>
+                                    <td><input type="text" class="code-input" list="code-datalist" value="${item.code}"></td>
+                                    <td><input type="text" class="product-name-input" list="name-datalist" value="${item.name}"></td>
+                                    <td><input type="number" class="quantity-input" min="1" value="${item.quantity}"></td>
+                                    <td><input type="text" class="base-price-input" disabled value="${item.basePrice}"></td>
+                                    <td><input type="text" class="total-price-output" disabled data-value="${item.totalPrice}" value="${Math.round(parseFloat(item.totalPrice)).toLocaleString('fa-IR')}"></td>
+                                    <td><input type="number" class="discount-percent-input" min="0" max="100" value="${item.discountPercent}"></td>
+                                    <td><input type="text" class="discount-amount-output" disabled data-value="${item.discountAmount}" value="${Math.round(parseFloat(item.discountAmount)).toLocaleString('fa-IR')}"></td>
+                                    <td><input type="text" class="final-price-output" disabled data-value="${item.finalPrice}" value="${Math.round(parseFloat(item.finalPrice)).toLocaleString('fa-IR')}"></td>
+                                `;
+                                preInvoiceTableBody.appendChild(row);
+                                attachEventListenersToRow(row); 
+                            }
+                        });
+                    }
+
+                    if(pageData && pageData.items.filter(item => item.code || item.name).length === 0){
+                         createTableRow();
+                    } else if (!pageData) {
+                         createTableRow();
+                    }
+                    
+                    currentPage = pageNumber;
+                    updatePageCounter();
+                    updateTotals();
+                    updateNavigationButtons();
+                };
+
+                projectButton.addEventListener('click', () => showPage(projectMenuPage));
+                backToMainButton.addEventListener('click', () => showPage(mainPage));
+                backToMenuButton.addEventListener('click', () => {
+                    showPage(projectMenuPage);
+                    grandTotals = {totalPrice: 0, totalDiscount: 0, finalPrice: 0};
+                    lastRowNumber = 0;
+                    currentPage = 1;
+                    invoicePages = []; 
+                });
+                newProjectButton.addEventListener('click', () => {
+                    showPage(newProjectPage);
+                    preInvoiceTableBody.innerHTML = '';
+                    rowCount = 0;
+                    lastRowNumber = 0;
+                    currentPage = 1;
+                    invoicePages = []; 
+                    createTableRow();
+                    updatePageCounter();
+                    updateNavigationButtons();
+                    $(projectDateInput).pDatepicker({
+                        format: 'YYYY/MM/DD'
+                    });
+                });
+                
+                factoryNameSelect.addEventListener('change', () => {
+                    preInvoiceTableBody.innerHTML = '';
+                    rowCount = 0;
+                    lastRowNumber = (currentPage - 1) * MAX_ROWS;
+                    createTableRow();
+                    updateTotals();
+                });
+
+                projectDiscountInput.addEventListener('change', () => {
+                    const newDiscount = projectDiscountInput.value;
+                    const allDiscountInputs = preInvoiceTableBody.querySelectorAll('.discount-percent-input');
+                    allDiscountInputs.forEach(input => {
+                        input.value = newDiscount;
+                        updateRow(input.closest('tr'));
+                    });
+                });
+
+                modalYesNextPage.addEventListener('click', () => startNewPage());
+                modalNoNextPage.addEventListener('click', () => {
+                    nextPageModal.style.display = 'none';
+                    saveModal.style.display = 'block';
+                });
+                modalYesSave.addEventListener('click', () => {
+                    saveCurrentPageData(); 
+                    alert('قابلیت ذخیره سازی در حال حاضر غیرفعال است.');
+                    saveModal.style.display = 'none';
+                });
+                modalNoSave.addEventListener('click', () => {
+                    saveModal.style.display = 'none';
+                });
+
+                prevPageButton.addEventListener('click', () => {
+                    if (currentPage > 1) {
+                        saveCurrentPageData();
+                        loadPageData(currentPage - 1);
+                    }
+                });
+
+                nextPageButton.addEventListener('click', () => {
+                    if (currentPage <= invoicePages.length) {
+                        saveCurrentPageData();
+                        loadPageData(currentPage + 1);
+                    }
+                });
+
+                fetchProductData();
+            });
+        }
+    </script>
+    <datalist id="code-datalist"></datalist>
+    <datalist id="name-datalist"></datalist>
+</body>
+</html>
