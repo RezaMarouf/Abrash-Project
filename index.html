@@ -3,9 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>گزارش فروش با فیلتر سه‌گانه</title>
+  <title>وب سایت مدیریت پروژه واحد فروش شرکت ابرش</title>
   <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fa.js"></script>
+
   <style>
+/* --- Styles for Quote Page --- */
+/* Initially hide main report page, quote page, and modals */
+#main-report-page,
+#quote-page, 
+.modal { 
+  display: none;
+}
     body {
       font-family: "Vazir", sans-serif;
       background-color: #f4f4f4;
@@ -40,15 +51,32 @@
       display: block;
       margin-bottom: 5px;
     }
-    select {
+    /* Styles for select and input fields */
+    select, input[type="text"], input[type="number"] {
       width: 100%;
-      padding: 6px 10px;
-      font-size: 14px;
-      border-radius: 5px;
-      border: 1px solid #2c3e50;
+      padding: 8px 12px;
+      font-size: 15px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
       background: white;
       cursor: pointer;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      box-sizing: border-box; /* Ensures padding doesn't increase width */
     }
+    select:focus, input[type="text"]:focus, input[type="number"]:focus {
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+      outline: none;
+    }
+
+    /* Specific style for disabled inputs */
+    input[disabled] {
+      background-color: #e9eef3; /* Light gray for disabled fields */
+      cursor: not-allowed;
+      border-color: #dcdcdc;
+    }
+
     .selected-list {
       background: #e9eef3;
       border: 1px solid #2c3e50;
@@ -106,6 +134,7 @@
       width: 100%;
       border-collapse: collapse;
       margin-top: 25px;
+      white-space: nowrap; /* Prevent wrapping in cells */
     }
     th, td {
       border: 1px solid #ccc;
@@ -120,49 +149,463 @@
     #chart {
       margin-top: 30px;
     }
+
+    /* --- Styles for Quote Page --- */
+    #main-report-page,
+    #quote-page,
+    .modal { 
+      display: none;
+    }
+
+    /* Updated grid for quote header inputs to control layout */
+    .quote-header-inputs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr); /* 3 columns for main info */
+      gap: 15px;
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      background-color: #fcfcfc;
+    }
+    
+    .quote-item-table th, .quote-item-table td {
+      padding: 6px 8px;
+      font-size: 14px;
+    }
+    .quote-item-table th:nth-child(1), /* Row */
+    .quote-item-table th:nth-child(4), /* Qty */
+    .quote-item-table th:nth-child(5), /* Base Unit Price */
+    .quote-item-table th:nth-child(6), /* Base Total */
+    .quote-item-table th:nth-child(7), /* Discount % */
+    .quote-item-table th:nth-child(8), /* Discount Amount */
+    .quote-item-table th:nth-child(9) { /* Final Price */
+      width: 80px; /* Adjust width for numerical columns */
+    }
+
+    .quote-item-table input[type="number"] {
+      padding: 4px 6px;
+      font-size: 14px;
+      text-align: center;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .quote-item-table select {
+      padding: 4px 6px;
+      font-size: 14px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .discount-cell {
+      position: relative;
+    }
+    .discount-cell input {
+      padding-right: 20px; /* Space for % sign */
+    }
+    .discount-cell::after {
+      content: '%';
+      position: absolute;
+      left: 10px; /* Adjust as needed for RTL */
+      top: 50%;
+      transform: translateY(-50%);
+      color: #888;
+      font-size: 13px;
+    }
+
+    .discount-red {
+      color: red;
+      font-weight: bold;
+    }
+    .discount-green {
+      color: green;
+      font-weight: bold;
+    }
+
+    .dark-gray-cell {
+  background-color: #e9eef3; /* تغییر پس‌زمینه به خاکستری روشن */
+  color: black;              /* تغییر رنگ متن به مشکی */
+  font-weight: bold;         /* برجسته بودن حفظ می‌شود */
+}
+
+    .merged-total-cell {
+      background-color: #555;
+      color: white;
+      font-weight: bold;
+      text-align: right !important; 
+      padding-right: 15px !important;
+    }
+
+    .summary-totals {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      background-color: #fcfcfc;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 17px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    .summary-value {
+      background-color: #555;
+      color: white;
+      padding: 5px 15px;
+      border-radius: 5px;
+    }
+
+    /* General Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: auto;
+      padding: 25px;
+      border: 1px solid #888;
+      width: 90%;
+      max-width: 450px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+    }
+    .modal-content p {
+        font-size: 1.1em;
+        margin-bottom: 20px;
+        color: #333;
+    }
+    .modal-buttons {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+    .modal-button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+    .modal-button:hover {
+        transform: translateY(-2px);
+    }
+    .modal-button.primary { background-color: #3498db; color: white; }
+    .modal-button.primary:hover { background-color: #2980b9; }
+    .modal-button.secondary { background-color: #2c3e50; color: white; }
+    .modal-button.secondary:hover { background-color: #1a2735; }
+    .modal-button.danger { background-color: #e74c3c; color: white; }
+    .modal-button.danger:hover { background-color: #c0392b; }
+    .modal-button.success { background-color: #28a745; color: white; }
+    .modal-button.success:hover { background-color: #218838; }
+
+    #project-name-modal .modal-content,
+    #load-project-modal .modal-content {
+        padding: 30px;
+    }
+    #project-name-input-modal {
+        width: calc(100% - 20px);
+        margin-bottom: 15px;
+    }
+    #load-project-select {
+        width: 100%;
+        margin-bottom: 15px;
+    }
+    .modal-error-message {
+        color: #e74c3c;
+        font-size: 0.9em;
+        margin-top: 10px;
+        font-weight: bold;
+    }
+
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>گزارش فروش با فیلتر کارخانه، محصول و نوع فروش</h1>
-    <div class="selectors">
-      <div class="selector-group">
-        <label for="factory-select">انتخاب کارخانه</label>
-        <select id="factory-select"><option value="">-- انتخاب کارخانه --</option></select>
-        <div id="selected-factories" class="selected-list"></div>
+    <div id="main-report-page">
+      <h1>مقایسه قیمت محصولات به تفکیک تولید کننده و نوع فروش</h1>
+      <div class="selectors">
+        <div class="selector-group">
+          <label for="factory-select">انتخاب کارخانه</label>
+          <select id="factory-select"><option value="">-- انتخاب کارخانه --</option></select>
+          <div id="selected-factories" class="selected-list"></div>
+        </div>
+        <div class="selector-group">
+          <label for="product-select">انتخاب محصول</label>
+          <select id="product-select"><option value="">-- انتخاب محصول --</option></select>
+          <div id="selected-products" class="selected-list"></div>
+        </div>
+        <div class="selector-group">
+          <label for="type-select">انتخاب نوع فروش</label>
+          <select id="type-select"><option value="">-- انتخاب نوع فروش --</option></select>
+          <div id="selected-types" class="selected-list"></div>
+        </div>
       </div>
-      <div class="selector-group">
-        <label for="product-select">انتخاب محصول</label>
-        <select id="product-select"><option value="">-- انتخاب محصول --</option></select>
-        <div id="selected-products" class="selected-list"></div>
+      <div class="buttons">
+        <button id="show-table" class="action-btn">گزارش جدول</button>
+        <button id="show-chart" class="action-btn">گزارش نمودار</button>
+        <button id="open-project-flow" class="action-btn">کلید پروژه</button>
       </div>
-      <div class="selector-group">
-        <label for="type-select">انتخاب نوع فروش</label>
-        <select id="type-select"><option value="">-- انتخاب نوع فروش --</option></select>
-        <div id="selected-types" class="selected-list"></div>
+      <div id="loading" style="text-align:center;color:#888;margin-top:30px;">در حال بارگذاری داده‌ها...</div>
+      <div id="report-table-container"></div>
+      <div id="chart"></div>
+    </div>
+
+    <div id="quote-page">
+      <h1>ایجاد پیش‌فاکتور پروژه</h1>
+      <div class="quote-header-inputs">
+        <div class="selector-group">
+          <label for="project-name-input">نام پروژه</label>
+          <input type="text" id="project-name-input" placeholder="با ورود نام مدیر و تاریخ، خودکار ساخته می‌شود" disabled />
+        </div>
+        <div class="selector-group">
+          <label for="project-manager-input">نام مدیر فنی پروژه</label>
+          <input type="text" id="project-manager-input" placeholder="نام و نام خانوادگی" />
+        </div>
+        <div class="selector-group">
+          <label for="project-date-input">تاریخ پروژه</label>
+          <input type="text" id="project-date-input" placeholder="تاریخ را انتخاب کنید" />
+        </div>
+        <div class="selector-group">
+          <label for="quote-factory-select">انتخاب کارخانه</label>
+          <select id="quote-factory-select"><option value="">-- انتخاب کارخانه --</option></select>
+        </div>
+        <div class="selector-group">
+          <label for="project-discount-input">درصد تخفیف پروژه (%)</label>
+          <input type="number" id="project-discount-input" value="0" min="0" max="100" />
+        </div>
+        <div class="selector-group">
+          <label for="manager-phone-input">تلفن همراه</label>
+          <input type="text" id="manager-phone-input" placeholder="0912xxxxxxx" />
+        </div>
+        <div class="selector-group" style="grid-column: span 3;">
+          <label for="project-address-input">آدرس</label>
+          <input type="text" id="project-address-input" placeholder="آدرس کامل پروژه" />
+        </div>
+      </div>
+
+      <div id="quote-table-container">
+        </div>
+
+      <div class="summary-totals">
+        <div class="summary-row">
+          <span>جمع کل پایه پروژه:</span>
+          <span id="project-base-total-summary" class="summary-value">0</span>
+        </div>
+        <div class="summary-row">
+          <span>جمع کل نهایی پروژه:</span>
+          <span id="project-final-total-summary" class="summary-value">0</span>
+        </div>
+      </div>
+
+      <div class="buttons" style="margin-top: 30px;">
+        <button id="add-new-quote-page" class="action-btn">افزودن صفحه جدید</button>
+        <button id="save-project" class="action-btn">ذخیره پروژه</button>
+        <button id="preview-quote" class="action-btn">پیش‌نمایش پیش‌فاکتور</button>
+        <button id="back-to-main" class="action-btn">بازگشت به صفحه اصلی</button>
       </div>
     </div>
-    <div class="buttons">
-      <button id="show-table" class="action-btn">گزارش جدول</button>
-      <button id="show-chart" class="action-btn">گزارش نمودار</button>
+  </div>
+
+  <div id="project-type-modal" class="modal">
+    <div class="modal-content">
+      <p>پروژه جدید ایجاد می‌کنید یا پروژه‌های قبلی را بازیابی می‌کنید؟</p>
+      <div class="modal-buttons">
+        <button class="modal-button primary" id="new-project-btn">پروژه جدید</button>
+        <button class="modal-button secondary" id="load-project-flow-btn">بازیابی اطلاعات پروژه قبلی</button>
+      </div>
     </div>
-    <div id="loading" style="text-align:center;color:#888;margin-top:30px;">در حال بارگذاری داده‌ها...</div>
-    <div id="report-table-container"></div>
-    <div id="chart"></div>
+  </div>
+
+  <div id="project-name-modal" class="modal">
+    <div class="modal-content">
+      <p>لطفاً نام پروژه را وارد کنید:</p>
+      <input type="text" id="project-name-input-modal" placeholder="نام پروژه (مثال: پروژه فاز 1)" />
+      <div class="modal-error-message" id="project-name-error"></div>
+      <div class="modal-buttons">
+        <button class="modal-button success" id="confirm-new-project-btn">تأیید</button>
+        <button class="modal-button danger" id="cancel-new-project-btn">لغو</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="load-project-modal" class="modal">
+    <div class="modal-content">
+      <p>انتخاب پروژه برای بازیابی:</p>
+      <select id="load-project-select">
+        <option value="">-- انتخاب پروژه --</option>
+      </select>
+      <div class="modal-error-message" id="load-project-error"></div>
+      <div class="modal-buttons">
+        <button class="modal-button success" id="confirm-load-project-btn">تأیید</button>
+        <button class="modal-button danger" id="cancel-load-project-btn">لغو</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmation-modal" class="modal">
+    <div class="modal-content">
+      <p id="modal-message"></p>
+      <div class="modal-buttons">
+        <button class="modal-button success" id="modal-yes-btn">بلی</button>
+        <button class="modal-button danger" id="modal-no-btn">خیر</button>
+      </div>
+    </div>
   </div>
 
   <script>
-    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSbo5OpFQ6AWpo1vzXAA8TBa8pelpMkGnFfiE9w4gS64wnPh1DBkqn0jeIdebIXXA/pub?gid=1202059914&single=true&output=csv";
+    // --- Global Variables and Constants ---
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSbo5OpFQ6AWpo1vzXAA8TBa8pelpMkGnFfiE9w4gS64wnPh1DBkqn0jeIdebIXXA/pub?gid=1202059914&single=true&output=csv";
+    let FACTORY_INDEX; 
+    const PRODUCT_NAME_INDEX = 1;
+    const PRODUCT_CODE_INDEX = 0;
+    const BASE_UNIT_PRICE_INDEX = 5;
+    const FINAL_PRICE_INDEX = 5;
+
+    let headers = [];
+    let csvData = []; 
+
+
+    // --- DOM Elements for Main Report Page ---
+    const mainReportPage = document.getElementById("main-report-page");
     const factorySelect = document.getElementById("factory-select");
     const productSelect = document.getElementById("product-select");
     const typeSelect = document.getElementById("type-select");
-    const selectedLists = {
-      factories: document.getElementById("selected-factories"),
-      products: document.getElementById("selected-products"),
-      types: document.getElementById("selected-types")
-    };
+    const selectedFactoriesList = document.getElementById("selected-factories");
+    const selectedProductsList = document.getElementById("selected-products");
+    const selectedTypesList = document.getElementById("selected-types");
     const selections = { factories: [], products: [], types: [] };
-    let headers = [], csvData = [];
+
+    // --- DOM Elements for Quote Page ---
+    const quotePage = document.getElementById("quote-page");
+    const openProjectFlowBtn = document.getElementById("open-project-flow");
+    const backToMainBtn = document.getElementById("back-to-main");
+    const quoteFactorySelect = document.getElementById("quote-factory-select");
+    const projectNameInput = document.getElementById("project-name-input");
+    const projectDiscountInput = document.getElementById("project-discount-input");
+    const projectManagerInput = document.getElementById("project-manager-input");
+    const projectDateInput = document.getElementById("project-date-input"); // <-- ADDED
+    const managerPhoneInput = document.getElementById("manager-phone-input");
+    const projectAddressInput = document.getElementById("project-address-input");
+    const quoteTableContainer = document.getElementById("quote-table-container");
+    const addQuotePageBtn = document.getElementById("add-new-quote-page");
+    const saveProjectBtn = document.getElementById("save-project");
+    const previewQuoteBtn = document.getElementById("preview-quote");
+
+    const projectBaseTotalSummary = document.getElementById("project-base-total-summary");
+    const projectFinalTotalSummary = document.getElementById("project-final-total-summary");
+
+    // --- Modal Elements ---
+    const projectTypeModal = document.getElementById("project-type-modal");
+    const newProjectBtn = document.getElementById("new-project-btn");
+    const loadProjectFlowBtn = document.getElementById("load-project-flow-btn");
+
+    const projectNameModal = document.getElementById("project-name-modal");
+    const projectNameInputModal = document.getElementById("project-name-input-modal");
+    const projectNameError = document.getElementById("project-name-error");
+    const confirmNewProjectBtn = document.getElementById("confirm-new-project-btn");
+    const cancelNewProjectBtn = document.getElementById("cancel-new-project-btn");
+
+    const loadProjectModal = document.getElementById("load-project-modal");
+    const loadProjectSelect = document.getElementById("load-project-select");
+    const loadProjectError = document.getElementById("load-project-error");
+    const confirmLoadProjectBtn = document.getElementById("confirm-load-project-btn");
+    const cancelLoadProjectBtn = document.getElementById("cancel-load-project-btn");
+
+    const confirmationModal = document.getElementById("confirmation-modal");
+    const modalMessage = document.getElementById("modal-message");
+    const modalYesBtn = document.getElementById("modal-yes-btn");
+    const modalNoBtn = document.getElementById("modal-no-btn");
+
+    // --- Project Data Structure ---
+    let currentProject = {
+      name: "",
+      subQuotes: {}
+    };
+    let currentSubQuoteKey = "";
+    let currentPageIndex = 0;
+    const ITEMS_PER_PAGE = 10;
+
+    function getActiveSubQuote() {
+        if (!currentSubQuoteKey || !currentProject.subQuotes[currentSubQuoteKey]) {
+            return null;
+        }
+        return currentProject.subQuotes[currentSubQuoteKey];
+    }
+
+    // --- NEW: Function to automatically update project name ---
+    function updateProjectName() {
+        const managerName = projectManagerInput.value.trim();
+        const projectDate = projectDateInput.value;
+
+        if (managerName && projectDate) {
+            const newProjectName = `پروژه ${managerName} ${projectDate}`;
+            projectNameInput.value = newProjectName;
+            
+            // Update the main project name in our data object
+            currentProject.name = newProjectName;
+
+            // If a sub-quote is active, its key depends on the project name, so we must update it too.
+            if (currentSubQuoteKey) {
+                const activeSubQuote = getActiveSubQuote();
+                if (activeSubQuote) {
+                    const factory = activeSubQuote.factory;
+                    const newSubQuoteKey = `${newProjectName} - ${factory}`;
+                    
+                    if (newSubQuoteKey !== currentSubQuoteKey) {
+                        // Create a new entry with the new key, copy data, and delete the old one.
+                        currentProject.subQuotes[newSubQuoteKey] = currentProject.subQuotes[currentSubQuoteKey];
+                        delete currentProject.subQuotes[currentSubQuoteKey];
+                        currentSubQuoteKey = newSubQuoteKey; // Point to the new key
+                    }
+                }
+            }
+        }
+    }
+
+
+    function formatNumber(n) {
+      let value = n;
+      if (typeof n === 'string') {
+        value = n.replace(/,/g, '').replace(/[^\d.]/g, '');
+      }
+      value = parseFloat(value);
+      if (isNaN(value)) {
+        return "0";
+      }
+      return value.toLocaleString("fa-IR", { maximumFractionDigits: 0 });
+    }
+
+    function formatPercent(p) {
+      let value = p;
+      if (typeof p === 'string') {
+        value = p.replace(/%/g, '').replace(/,/g, '');
+      }
+      value = parseFloat(value);
+      if (isNaN(value)) {
+        return "0%";
+      }
+      return Math.round(value) + "%";
+    }
 
     function addItem(key, selectElem, listElem, arr) {
       const v = selectElem.value;
@@ -176,6 +619,11 @@
         btn.onclick = () => {
           arr.splice(arr.indexOf(v), 1);
           listElem.removeChild(div);
+          if (document.getElementById("report-table-container").innerHTML !== "") {
+              document.getElementById("show-table").click();
+          } else if (document.getElementById("chart").innerHTML !== "") {
+              document.getElementById("show-chart").click();
+          }
         };
         div.appendChild(btn);
         listElem.appendChild(div);
@@ -183,20 +631,23 @@
       selectElem.value = "";
     }
 
-    function populate(selectElem, arr) {
+    function populateSelect(selectElem, arr) {
+      const firstOption = selectElem.querySelector('option:first-child');
+      selectElem.innerHTML = '';
+      if (firstOption) {
+          selectElem.appendChild(firstOption);
+      } else {
+        const defaultOption = document.createElement("option");
+        defaultOption.value = "";
+        defaultOption.textContent = "-- انتخاب --";
+        selectElem.appendChild(defaultOption);
+      }
+
       arr.sort().forEach(v => {
         const o = document.createElement("option");
         o.value = v; o.textContent = v;
         selectElem.appendChild(o);
       });
-    }
-
-    function formatNumber(n) {
-      return Number(n).toLocaleString("en-US", { maximumFractionDigits: 0 });
-    }
-
-    function formatPercent(p) {
-      return Math.round(parseFloat(p)) + "%";
     }
 
     function filterLatestRecords(data) {
@@ -207,19 +658,24 @@
       const map = new Map();
 
       data.forEach(row => {
+        const dateStr = row[dateIndex];
+        if (!dateStr || dateStr.trim() === "" || isNaN(new Date(dateStr))) {
+            console.warn("Invalid date string encountered:", dateStr, ". Skipping row.");
+            return;
+        }
         const key = row[factoryIndex] + "|" + row[productIndex] + "|" + row[typeIndex];
-        const currentDate = new Date(row[dateIndex]);
+        const currentDate = new Date(dateStr);
         if (!map.has(key) || new Date(map.get(key)[dateIndex]) < currentDate) {
           map.set(key, row);
         }
       });
-
       return Array.from(map.values());
     }
 
     function generateTable(filteredData) {
       const container = document.getElementById("report-table-container");
       container.innerHTML = "";
+      document.getElementById("chart").innerHTML = "";
 
       if (filteredData.length === 0) {
         container.innerHTML = "<p style='text-align:center;color:#c00;'>داده‌ای یافت نشد.</p>";
@@ -243,7 +699,7 @@
         row.forEach((cell, i) => {
           const td = document.createElement("td");
           const h = headers[i];
-          if (h.includes("قیمت")) {
+          if (h.includes("قیمت") || h.includes("مقدار")) {
             td.textContent = formatNumber(cell);
           } else if (h.includes("درصد")) {
             td.textContent = formatPercent(cell);
@@ -261,6 +717,7 @@
     }
 
     function generateChart(filteredData) {
+      document.getElementById("report-table-container").innerHTML = "";
       document.getElementById("chart").innerHTML = "";
 
       if (filteredData.length === 0) {
@@ -272,12 +729,12 @@
       const basePriceIndex = headers.indexOf("قیمت پایه");
       const finalPriceIndex = headers.indexOf("قیمت نهایی");
       const factoryIndex = headers.indexOf("کارخانه");
-
       const typeIndex = headers.indexOf("نوع فروش");
-      const categories = filteredData.map(r => `${r[productIndex]} (${r[factoryIndex]} - ${r[typeIndex]})`);
 
-      const basePrices = filteredData.map(r => parseFloat(r[basePriceIndex]));
-      const finalPrices = filteredData.map(r => parseFloat(r[finalPriceIndex]));
+      const categories = filteredData.map(r => `${r[productIndex]} (${r[factoryIndex]} - ${r[typeIndex]})`);
+      const basePrices = filteredData.map(r => parseFloat(String(r[basePriceIndex]).replace(/,/g, '')));
+      const finalPrices = filteredData.map(r => parseFloat(String(r[finalPriceIndex]).replace(/,/g, '')));
+
 
       const options = {
         chart: {
@@ -291,13 +748,13 @@
             horizontal: false,
             columnWidth: '55%',
             endingShape: 'rounded',
-            is3D: true // فعال کردن حالت سه‌بعدی
+            is3D: true
           }
         },
         colors: ['#3498db', '#e74c3c'],
         dataLabels: {
           enabled: true,
-          formatter: val => val.toLocaleString(),
+          formatter: val => val.toLocaleString("fa-IR"),
           offsetY: -10,
           style: { fontSize: '12px', colors: ['#000'] }
         },
@@ -307,10 +764,10 @@
           { name: 'قیمت نهایی', data: finalPrices }
         ],
         xaxis: { categories: categories },
-        yaxis: { labels: { formatter: val => val.toLocaleString() } },
+        yaxis: { labels: { formatter: val => val.toLocaleString("fa-IR") } },
         fill: { opacity: 0.9 },
         tooltip: {
-          y: { formatter: val => val.toLocaleString() }
+          y: { formatter: val => val.toLocaleString("fa-IR") }
         }
       };
 
@@ -318,36 +775,430 @@
       chart.render();
     }
 
-    function init() {
-      fetch(csvUrl).then(r => r.text()).then(txt => {
-        const rows = txt.trim().split("\n").map(r =>
-          r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c =>
-            c.replace(/^"|"$/g, "").trim()
-          )
-        );
-        headers = rows.shift();
-        csvData = rows;
-        const fi = headers.indexOf("کارخانه");
-        const pi = headers.indexOf("نام محصول");
-        const ti = headers.indexOf("نوع فروش");
-        const setF = new Set(), setP = new Set(), setT = new Set();
-        csvData.forEach(r => {
-          setF.add(r[fi]);
-          setP.add(r[pi]);
-          setT.add(r[ti]);
-        });
-        populate(factorySelect, [...setF]);
-        populate(productSelect, [...setP]);
-        populate(typeSelect, [...setT]);
-        document.getElementById("loading").style.display = "none";
-      }).catch(e => {
-        document.getElementById("loading").textContent = "خطا در بارگذاری داده‌ها: " + e.message;
+    function initMainPageFilters() {
+      const fi = headers.indexOf("کارخانه");
+      const pi = headers.indexOf("نام محصول");
+      const ti = headers.indexOf("نوع فروش");
+      const setF = new Set(), setP = new Set(), setT = new Set();
+      csvData.forEach(r => {
+        setF.add(r[fi]);
+        setP.add(r[pi]);
+        setT.add(r[ti]);
+      });
+      populateSelect(factorySelect, [...setF]);
+      populateSelect(productSelect, [...setP]);
+      populateSelect(typeSelect, [...setT]);
+    }
+
+    function getProductsByFactory(factoryName) {
+      if (!factoryName) return [];
+      const factoryIndex = headers.indexOf("کارخانه");
+      return csvData.filter(row => row[factoryIndex] === factoryName);
+    }
+
+    function getProductDetails(productCode, productName, factory) {
+      const factoryIndex = headers.indexOf("کارخانه");
+      const codeIndex = headers.indexOf("کد کالا");
+      const nameIndex = headers.indexOf("نام محصول");
+
+      if (!factory) return null;
+
+      const found = csvData.find(row =>
+        row[factoryIndex] === factory &&
+        ((productCode && row[codeIndex] === productCode) || (productName && row[nameIndex] === productName))
+      );
+
+      if (found) {
+        return {
+          code: found[PRODUCT_CODE_INDEX],
+          name: found[PRODUCT_NAME_INDEX],
+          basePrice: parseFloat(String(found[BASE_UNIT_PRICE_INDEX]).replace(/,/g, '')) || 0
+        };
+      }
+      return null;
+    }
+
+    function createQuoteTable(pageItems, startRowIndex) {
+      const activeSubQuote = getActiveSubQuote();
+      if (!activeSubQuote) {
+          quoteTableContainer.innerHTML = '<p style="text-align:center;color:#888;">لطفاً ابتدا یک کارخانه را انتخاب کنید.</p>';
+          projectBaseTotalSummary.textContent = formatNumber(0);
+          projectFinalTotalSummary.textContent = formatNumber(0);
+          return;
+      }
+
+      const table = document.createElement("table");
+      table.className = "quote-item-table";
+      const thead = document.createElement("thead");
+      const tbody = document.createElement("tbody");
+
+      thead.innerHTML = `
+        <tr>
+          <th>ردیف</th>
+          <th>کد کالا</th>
+          <th>نام محصول</th>
+          <th>تعداد</th>
+          <th>قیمت پایه واحد</th>
+          <th>قیمت پایه کل</th>
+          <th>درصد تخفیف</th>
+          <th>مبلغ تخفیف</th>
+          <th>قیمت نهایی پس از تخفیف</th>
+        </tr>
+      `;
+      tbody.id = `quote-tbody-page-${currentPageIndex}`;
+
+      for (let i = 0; i < ITEMS_PER_PAGE; i++) {
+        const globalRowIndex = startRowIndex + i;
+        const item = pageItems[i] || {};
+        const tr = document.createElement("tr");
+        tr.id = `quote-row-${globalRowIndex}`;
+
+        tr.innerHTML = `
+          <td>${globalRowIndex + 1}</td>
+          <td>
+            <select data-type="product-code" data-row-index="${globalRowIndex}">
+              <option value="${item.productCode || ''}">${item.productCode || '-- انتخاب کد --'}</option>
+            </select>
+          </td>
+          <td>
+            <select data-type="product-name" data-row-index="${globalRowIndex}">
+              <option value="${item.productName || ''}">${item.productName || '-- انتخاب محصول --'}</option>
+            </select>
+          </td>
+          <td><input type="number" min="0" value="${item.quantity || ''}" data-type="quantity" data-row-index="${globalRowIndex}" /></td>
+          <td><input type="text" disabled value="${formatNumber(item.baseUnitPrice || 0)}" data-type="base-unit-price" data-row-index="${globalRowIndex}" class="dark-gray-cell" /></td>
+          <td><input type="text" disabled value="${formatNumber(item.baseTotalPrice || 0)}" data-type="base-total-price" data-row-index="${globalRowIndex}" class="dark-gray-cell" /></td>
+          <td class="discount-cell">
+            <input type="number" min="0" max="100" value="${item.itemDiscountPercent !== undefined ? item.itemDiscountPercent : (activeSubQuote.projectDiscount || 0)}" data-type="item-discount" data-row-index="${globalRowIndex}" />
+          </td>
+          <td><input type="text" disabled value="${formatNumber(item.itemDiscountAmount || 0)}" data-type="item-discount-amount" data-row-index="${globalRowIndex}" class="dark-gray-cell" /></td>
+          <td><input type="text" disabled value="${formatNumber(item.finalPrice || 0)}" data-type="final-price" data-row-index="${globalRowIndex}" class="dark-gray-cell" /></td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      const totalRow = document.createElement("tr");
+      totalRow.innerHTML = `
+        <td colspan="4" class="merged-total-cell">جمع کل این صفحه</td>
+        <td class="dark-gray-cell"><input type="text" disabled id="page-base-total-${currentPageIndex}" value="0"/></td>
+        <td class="dark-gray-cell"><input type="text" disabled id="page-total-discount-amount-${currentPageIndex}" value="0"/></td>
+        <td colspan="2" class="dark-gray-cell"><input type="text" disabled id="page-final-total-${currentPageIndex}" value="0"/></td>
+      `;
+      tbody.appendChild(totalRow);
+
+      table.appendChild(thead);
+      table.appendChild(tbody);
+      quoteTableContainer.innerHTML = '';
+      quoteTableContainer.appendChild(table);
+
+      attachQuoteTableListeners(startRowIndex);
+      updateDiscountInputColors();
+      calculatePageTotals(currentPageIndex, activeSubQuote.pages[currentPageIndex] || []);
+      updateProjectTotals();
+      populateProductSelectsForCurrentFactory();
+    }
+
+    function populateProductSelectsForCurrentFactory() {
+      const activeSubQuote = getActiveSubQuote();
+      if (!activeSubQuote || !activeSubQuote.factory) return;
+
+      const selectedFactory = activeSubQuote.factory;
+      const productsForFactory = getProductsByFactory(selectedFactory);
+      const productCodes = [...new Set(productsForFactory.map(p => p[PRODUCT_CODE_INDEX]))];
+      const productNames = [...new Set(productsForFactory.map(p => p[PRODUCT_NAME_INDEX]))];
+
+      document.querySelectorAll(`#quote-tbody-page-${currentPageIndex} [data-type="product-code"]`).forEach(selectElem => {
+        const currentCode = selectElem.value;
+        populateSelect(selectElem, productCodes);
+        selectElem.value = currentCode;
+      });
+      document.querySelectorAll(`#quote-tbody-page-${currentPageIndex} [data-type="product-name"]`).forEach(selectElem => {
+        const currentName = selectElem.value;
+        populateSelect(selectElem, productNames);
+        selectElem.value = currentName;
       });
     }
 
-    factorySelect.onchange = () => addItem("factories", factorySelect, selectedLists.factories, selections.factories);
-    productSelect.onchange = () => addItem("products", productSelect, selectedLists.products, selections.products);
-    typeSelect.onchange = () => addItem("types", typeSelect, selectedLists.types, selections.types);
+    function attachQuoteTableListeners(startRowIndex) {
+      const tbody = document.getElementById(`quote-tbody-page-${currentPageIndex}`);
+      if (!tbody) return;
+
+      tbody.addEventListener('change', (e) => {
+        const target = e.target;
+        const globalRowIndex = parseInt(target.dataset.rowIndex);
+        const localRowIndex = globalRowIndex - startRowIndex;
+
+        const activeSubQuote = getActiveSubQuote();
+        if (!activeSubQuote) return;
+
+        if (!activeSubQuote.pages[currentPageIndex][localRowIndex]) {
+            activeSubQuote.pages[currentPageIndex][localRowIndex] = {
+                rowIndex: globalRowIndex + 1, productCode: "", productName: "", quantity: 0,
+                baseUnitPrice: 0, baseTotalPrice: 0, itemDiscountPercent: activeSubQuote.projectDiscount || 0,
+                itemDiscountAmount: 0, finalPrice: 0
+            };
+        }
+        let item = activeSubQuote.pages[currentPageIndex][localRowIndex];
+
+        if (target.dataset.type === 'product-code' || target.dataset.type === 'product-name') {
+          const selectedFactory = activeSubQuote.factory;
+          const productDetails = getProductDetails(
+            target.dataset.type === 'product-code' ? target.value : null,
+            target.dataset.type === 'product-name' ? target.value : null,
+            selectedFactory
+          );
+
+          if (productDetails) {
+            item.productCode = productDetails.code;
+            item.productName = productDetails.name;
+            item.baseUnitPrice = productDetails.basePrice;
+
+            const currentRow = target.closest('tr');
+            currentRow.querySelector(`[data-type="product-code"]`).value = productDetails.code;
+            currentRow.querySelector(`[data-type="product-name"]`).value = productDetails.name;
+            currentRow.querySelector(`[data-type="base-unit-price"]`).value = formatNumber(productDetails.basePrice);
+
+          } else {
+            item.productCode = ""; item.productName = ""; item.baseUnitPrice = 0;
+            const currentRow = target.closest('tr');
+            currentRow.querySelector(`[data-type="product-code"]`).value = "";
+            currentRow.querySelector(`[data-type="product-name"]`).value = "";
+            currentRow.querySelector(`[data-type="base-unit-price"]`).value = formatNumber(0);
+          }
+        } else if (target.dataset.type === 'quantity') {
+          item.quantity = parseFloat(target.value) || 0;
+        } else if (target.dataset.type === 'item-discount') {
+          item.itemDiscountPercent = parseFloat(target.value) || 0;
+          updateDiscountInputColors();
+        }
+
+        calculateRowPrices(item);
+        updateRowInputs(item, globalRowIndex);
+        calculatePageTotals(currentPageIndex, activeSubQuote.pages[currentPageIndex]);
+        updateProjectTotals();
+      });
+
+      tbody.addEventListener('input', (e) => {
+        const target = e.target;
+        const globalRowIndex = parseInt(target.dataset.rowIndex);
+        const localRowIndex = globalRowIndex - startRowIndex;
+        const activeSubQuote = getActiveSubQuote();
+        if (!activeSubQuote) return;
+
+        let item = activeSubQuote.pages[currentPageIndex][localRowIndex];
+        if (!item) {
+             item = {
+                rowIndex: globalRowIndex + 1, productCode: "", productName: "", quantity: 0,
+                baseUnitPrice: 0, baseTotalPrice: 0, itemDiscountPercent: activeSubQuote.projectDiscount || 0,
+                itemDiscountAmount: 0, finalPrice: 0
+            };
+            activeSubQuote.pages[currentPageIndex][localRowIndex] = item;
+        }
+
+        if (target.dataset.type === 'quantity') {
+          item.quantity = parseFloat(target.value) || 0;
+        } else if (target.dataset.type === 'item-discount') {
+          item.itemDiscountPercent = parseFloat(target.value) || 0;
+          updateDiscountInputColors();
+        }
+        calculateRowPrices(item);
+        updateRowInputs(item, globalRowIndex);
+        calculatePageTotals(currentPageIndex, activeSubQuote.pages[currentPageIndex]);
+        updateProjectTotals();
+      });
+    }
+
+    function calculateRowPrices(item) {
+        item.quantity = parseFloat(item.quantity) || 0;
+        item.baseUnitPrice = parseFloat(item.baseUnitPrice) || 0;
+        item.itemDiscountPercent = parseFloat(item.itemDiscountPercent) || 0;
+
+        item.baseTotalPrice = item.quantity * item.baseUnitPrice;
+        item.itemDiscountAmount = item.baseTotalPrice * (item.itemDiscountPercent / 100);
+        item.finalPrice = item.baseTotalPrice - item.itemDiscountAmount;
+    }
+
+    function updateRowInputs(item, globalRowIndex) {
+      const rowElem = document.getElementById(`quote-row-${globalRowIndex}`);
+      if (!rowElem) return;
+      rowElem.querySelector(`[data-type="base-total-price"]`).value = formatNumber(item.baseTotalPrice);
+      rowElem.querySelector(`[data-type="item-discount-amount"]`).value = formatNumber(item.itemDiscountAmount);
+      rowElem.querySelector(`[data-type="final-price"]`).value = formatNumber(item.finalPrice);
+    }
+
+    function calculatePageTotals(pageIdx, items) {
+      let pageBaseTotal = 0;
+      let pageTotalDiscountAmount = 0;
+      let pageFinalTotal = 0;
+
+      items.forEach(item => {
+        if (item && item.quantity > 0 && typeof item.baseUnitPrice === 'number' && !isNaN(item.baseUnitPrice)) {
+          pageBaseTotal += item.baseTotalPrice;
+          pageTotalDiscountAmount += item.itemDiscountAmount;
+          pageFinalTotal += item.finalPrice;
+        }
+      });
+
+      const pageBaseTotalElem = document.getElementById(`page-base-total-${pageIdx}`);
+      const pageTotalDiscountAmountElem = document.getElementById(`page-total-discount-amount-${pageIdx}`);
+      const pageFinalTotalElem = document.getElementById(`page-final-total-${pageIdx}`);
+
+      if (pageBaseTotalElem) pageBaseTotalElem.value = formatNumber(pageBaseTotal);
+      if (pageTotalDiscountAmountElem) pageTotalDiscountAmountElem.value = formatNumber(pageTotalDiscountAmount);
+      if (pageFinalTotalElem) pageFinalTotalElem.value = formatNumber(pageFinalTotal);
+    }
+
+    function updateProjectTotals() {
+      let totalBase = 0;
+      let totalFinal = 0;
+
+      for (const key in currentProject.subQuotes) {
+        const subQuote = currentProject.subQuotes[key];
+        subQuote.pages.forEach(page => {
+          page.forEach(item => {
+            if (item && item.quantity > 0 && typeof item.baseTotalPrice === 'number' && !isNaN(item.baseTotalPrice)) {
+              totalBase += item.baseTotalPrice;
+              totalFinal += item.finalPrice;
+            }
+          });
+        });
+      }
+
+      projectBaseTotalSummary.textContent = formatNumber(totalBase);
+      projectFinalTotalSummary.textContent = formatNumber(totalFinal);
+    }
+
+    function updateDiscountInputColors() {
+        const activeSubQuote = getActiveSubQuote();
+        const defaultDiscount = activeSubQuote ? (parseFloat(activeSubQuote.projectDiscount) || 0) : 0;
+        document.querySelectorAll(`#quote-tbody-page-${currentPageIndex} [data-type="item-discount"]`).forEach(input => {
+            const currentDiscount = parseFloat(input.value) || 0;
+            input.classList.remove('discount-red', 'discount-green');
+            if (currentDiscount < defaultDiscount) {
+                input.classList.add('discount-red');
+            } else if (currentDiscount > defaultDiscount) {
+                input.classList.add('discount-green');
+            }
+        });
+    }
+
+    function saveCurrentSubQuoteData() {
+        if (!currentSubQuoteKey || !currentProject.subQuotes[currentSubQuoteKey]) {
+            return;
+        }
+
+        const activeSubQuote = getActiveSubQuote();
+
+        activeSubQuote.projectDiscount = parseFloat(projectDiscountInput.value) || 0;
+        activeSubQuote.manager = projectManagerInput.value;
+        activeSubQuote.phone = managerPhoneInput.value;
+        activeSubQuote.address = projectAddressInput.value;
+        activeSubQuote.factory = quoteFactorySelect.value;
+
+        const currentPageItems = [];
+        const tbody = document.getElementById(`quote-tbody-page-${currentPageIndex}`);
+        if (!tbody) {
+            return;
+        }
+
+        const startRowIndex = currentPageIndex * ITEMS_PER_PAGE;
+        for (let i = 0; i < ITEMS_PER_PAGE; i++) {
+            const globalRowIndex = startRowIndex + i;
+            const rowElem = document.getElementById(`quote-row-${globalRowIndex}`);
+            if (rowElem) {
+                const productCode = rowElem.querySelector(`[data-type="product-code"]`).value;
+                const productName = rowElem.querySelector(`[data-type="product-name"]`).value;
+                const quantity = parseFloat(rowElem.querySelector(`[data-type="quantity"]`).value) || 0;
+                const baseUnitPrice = parseFloat(rowElem.querySelector(`[data-type="base-unit-price"]`).value.replace(/,/g, '')) || 0;
+                const itemDiscountPercent = parseFloat(rowElem.querySelector(`[data-type="item-discount"]`).value) || 0;
+
+                if (productCode || productName || quantity > 0) {
+                    let item = {
+                        rowIndex: globalRowIndex + 1, productCode: productCode, productName: productName,
+                        quantity: quantity, baseUnitPrice: baseUnitPrice, itemDiscountPercent: itemDiscountPercent
+                    };
+                    calculateRowPrices(item);
+                    currentPageItems.push(item);
+                }
+            }
+        }
+        activeSubQuote.pages[currentPageIndex] = currentPageItems;
+    }
+
+    function saveProjectToLocalStorage() {
+      saveCurrentSubQuoteData();
+
+      if (!currentProject.name) {
+        alert("خطا: نام پروژه را با وارد کردن نام مدیر و تاریخ مشخص کنید.");
+        return;
+      }
+
+      let allProjects = JSON.parse(localStorage.getItem('allProjectsData')) || {};
+      allProjects[currentProject.name] = currentProject;
+
+      localStorage.setItem('allProjectsData', JSON.stringify(allProjects));
+      alert("پروژه با موفقیت ذخیره شد!");
+    }
+
+
+    function loadProjectFromLocalStorage(projectName) {
+      const allProjects = JSON.parse(localStorage.getItem('allProjectsData')) || {};
+      return allProjects[projectName];
+    }
+
+    function showPage(pageId) {
+        document.querySelectorAll('#main-report-page, #quote-page').forEach(page => {
+            page.style.display = 'none';
+        });
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.style.display = 'none';
+        });
+        document.getElementById(pageId).style.display = 'block';
+    }
+
+    function initializeQuotePage(mainProjectName, subQuoteToLoad = null) {
+      currentProject.name = mainProjectName;
+      projectNameInput.value = mainProjectName;
+
+      if (subQuoteToLoad) {
+        currentSubQuoteKey = `${mainProjectName} - ${subQuoteToLoad.factory}`;
+        currentProject.subQuotes[currentSubQuoteKey] = subQuoteToLoad;
+        
+        quoteFactorySelect.value = subQuoteToLoad.factory;
+        projectDiscountInput.value = subQuoteToLoad.projectDiscount;
+        projectManagerInput.value = subQuoteToLoad.manager;
+        managerPhoneInput.value = subQuoteToLoad.phone;
+        projectAddressInput.value = subQuoteToLoad.address;
+        projectDateInput.value = ""; // Clear date on load
+
+        currentPageIndex = 0;
+        const activeSubQuote = getActiveSubQuote();
+        createQuoteTable(activeSubQuote.pages[currentPageIndex] || [], currentPageIndex * ITEMS_PER_PAGE);
+
+      } else {
+        currentSubQuoteKey = "";
+        quoteFactorySelect.value = "";
+        projectDiscountInput.value = 0;
+        projectManagerInput.value = "";
+        managerPhoneInput.value = "";
+        projectAddressInput.value = "";
+        projectDateInput.value = ""; // <-- ADDED
+        currentPageIndex = 0;
+        quoteTableContainer.innerHTML = '<p style="text-align:center;color:#888; margin-top: 50px;">لطفاً ابتدا یک کارخانه را انتخاب کنید.</p>';
+      }
+      populateFactorySelectForQuotePage();
+      updateProjectTotals();
+      showPage('quote-page');
+    }
+
+    function populateFactorySelectForQuotePage() {
+      const factories = [...new Set(csvData.map(row => row[FACTORY_INDEX]))];
+      populateSelect(quoteFactorySelect, factories);
+    }
+
+    factorySelect.onchange = () => addItem("factories", factorySelect, selectedFactoriesList, selections.factories);
+    productSelect.onchange = () => addItem("products", productSelect, selectedProductsList, selections.products);
+    typeSelect.onchange = () => addItem("types", typeSelect, selectedTypesList, selections.types);
 
     document.getElementById("show-table").onclick = () => {
       const fi = headers.indexOf("کارخانه");
@@ -379,7 +1230,225 @@
       generateChart(latestFiltered);
     };
 
-    init();
+    openProjectFlowBtn.onclick = () => {
+      showPage('project-type-modal');
+    };
+
+    newProjectBtn.onclick = () => {
+      projectTypeModal.style.display = 'none';
+      projectNameInputModal.value = '';
+      projectNameError.textContent = '';
+      showPage('project-name-modal');
+    };
+
+    loadProjectFlowBtn.onclick = () => {
+      projectTypeModal.style.display = 'none';
+      loadProjectError.textContent = '';
+      const allProjects = JSON.parse(localStorage.getItem('allProjectsData')) || {};
+      const projectNames = Object.keys(allProjects);
+
+      if (projectNames.length === 0) {
+        loadProjectError.textContent = "هیچ پروژه ذخیره‌شده‌ای یافت نشد.";
+        loadProjectSelect.innerHTML = `<option value="">-- هیچ پروژه‌ای یافت نشد --</option>`;
+        confirmLoadProjectBtn.disabled = true;
+      } else {
+        populateSelect(loadProjectSelect, projectNames);
+        confirmLoadProjectBtn.disabled = false;
+      }
+      showPage('load-project-modal');
+    };
+
+    confirmNewProjectBtn.onclick = () => {
+      const pName = projectNameInputModal.value.trim();
+      if (!pName) {
+        projectNameError.textContent = "نام پروژه وارد نشده است.";
+        return;
+      }
+      const allProjects = JSON.parse(localStorage.getItem('allProjectsData')) || {};
+      if (allProjects[pName]) {
+        projectNameError.textContent = "این نام تکراری است.";
+        return;
+      }
+      projectNameError.textContent = '';
+      
+      currentProject = { name: pName, subQuotes: {} }; 
+      currentSubQuoteKey = ""; 
+      
+      initializeQuotePage(currentProject.name, null);
+    };
+
+    cancelNewProjectBtn.onclick = () => {
+      showPage('main-report-page');
+    };
+
+    confirmLoadProjectBtn.onclick = () => {
+      const pName = loadProjectSelect.value;
+      if (!pName) {
+        loadProjectError.textContent = "لطفاً یک پروژه را انتخاب کنید.";
+        return;
+      }
+      loadProjectError.textContent = '';
+      const loadedData = loadProjectFromLocalStorage(pName);
+      if (loadedData) {
+        currentProject = loadedData;
+        
+        const subQuoteKeys = Object.keys(currentProject.subQuotes);
+        if (subQuoteKeys.length > 0) {
+            currentSubQuoteKey = subQuoteKeys[0]; 
+            initializeQuotePage(currentProject.name, currentProject.subQuotes[currentSubQuoteKey]);
+        } else {
+            currentSubQuoteKey = ""; 
+            initializeQuotePage(currentProject.name, null);
+        }
+      } else {
+        alert("خطا در بارگذاری پروژه.");
+        showPage('main-report-page');
+      }
+    };
+
+    cancelLoadProjectBtn.onclick = () => {
+      showPage('main-report-page');
+    };
+
+    quoteFactorySelect.onchange = () => {
+        const selectedFactory = quoteFactorySelect.value;
+        if (!selectedFactory) {
+            if (currentSubQuoteKey) {
+                saveCurrentSubQuoteData();
+            }
+            currentSubQuoteKey = "";
+            quoteTableContainer.innerHTML = '<p style="text-align:center;color:#888; margin-top: 50px;">لطفاً ابتدا یک کارخانه را انتخاب کنید.</p>';
+            projectDiscountInput.value = 0;
+            // projectManagerInput.value = ""; // Keep manager name
+            // managerPhoneInput.value = "";
+            // projectAddressInput.value = "";
+            currentPageIndex = 0;
+            updateProjectTotals();
+            return;
+        }
+
+        if (!currentProject.name) {
+            alert("لطفاً ابتدا نام پروژه را با ورود نام مدیر و تاریخ مشخص کنید.");
+            quoteFactorySelect.value = "";
+            return;
+        }
+
+        saveCurrentSubQuoteData();
+
+        const newSubQuoteKey = `${currentProject.name} - ${selectedFactory}`;
+        currentSubQuoteKey = newSubQuoteKey;
+
+        if (!currentProject.subQuotes[newSubQuoteKey]) {
+            currentProject.subQuotes[newSubQuoteKey] = {
+                factory: selectedFactory,
+                projectDiscount: parseFloat(projectDiscountInput.value) || 0,
+                manager: projectManagerInput.value,
+                phone: managerPhoneInput.value,
+                address: projectAddressInput.value,
+                pages: [[]]
+            };
+        } else {
+            const existingSubQuote = currentProject.subQuotes[newSubQuoteKey];
+            projectDiscountInput.value = existingSubQuote.projectDiscount;
+            projectManagerInput.value = existingSubQuote.manager;
+            managerPhoneInput.value = existingSubQuote.phone;
+            projectAddressInput.value = existingSubQuote.address;
+        }
+
+        currentPageIndex = 0;
+        const activeSubQuote = getActiveSubQuote();
+        createQuoteTable(activeSubQuote.pages[currentPageIndex] || [], currentPageIndex * ITEMS_PER_PAGE);
+        updateDiscountInputColors();
+        updateProjectTotals();
+    };
+
+    projectDiscountInput.oninput = () => {
+        const activeSubQuote = getActiveSubQuote();
+        if (activeSubQuote) {
+            activeSubQuote.projectDiscount = parseFloat(projectDiscountInput.value) || 0;
+            updateDiscountInputColors();
+        }
+    };
+
+    // MODIFIED: Call updateProjectName on manager name input
+    projectManagerInput.oninput = () => { 
+      const activeSubQuote = getActiveSubQuote(); 
+      if(activeSubQuote) activeSubQuote.manager = projectManagerInput.value; 
+      updateProjectName();
+    };
+    managerPhoneInput.oninput = () => { const activeSubQuote = getActiveSubQuote(); if(activeSubQuote) activeSubQuote.phone = managerPhoneInput.value; };
+    projectAddressInput.oninput = () => { const activeSubQuote = getActiveSubQuote(); if(activeSubQuote) activeSubQuote.address = projectAddressInput.value; };
+
+    addQuotePageBtn.onclick = () => {
+      const activeSubQuote = getActiveSubQuote();
+      if (!activeSubQuote || !activeSubQuote.factory) {
+        alert("لطفاً ابتدا یک کارخانه را در بخش پیش‌فاکتور انتخاب کنید.");
+        return;
+      }
+      if (!currentProject.name) {
+        alert("لطفاً ابتدا نام پروژه را با ورود نام مدیر و تاریخ مشخص کنید.");
+        return;
+      }
+
+      saveCurrentSubQuoteData();
+
+      currentPageIndex++;
+      if (!activeSubQuote.pages[currentPageIndex]) {
+        activeSubQuote.pages.push([]);
+      }
+
+      modalMessage.textContent = `اطلاعات وارد شده. آیا مایل به درج اطلاعات بیشتر در صفحه ${currentPageIndex + 1} هستید؟`;
+      confirmationModal.style.display = 'flex';
+
+      modalYesBtn.onclick = () => {
+        confirmationModal.style.display = 'none';
+        createQuoteTable(activeSubQuote.pages[currentPageIndex], currentPageIndex * ITEMS_PER_PAGE);
+      };
+
+      modalNoBtn.onclick = () => {
+        confirmationModal.style.display = 'none';
+        saveProjectToLocalStorage();
+        alert("پروژه ذخیره شد و به صفحه اصلی باز می‌گردید.");
+        showPage('main-report-page');
+      };
+    };
+
+    saveProjectBtn.onclick = saveProjectToLocalStorage;
+
+    previewQuoteBtn.onclick = () => {
+        saveCurrentSubQuoteData();
+        alert("قابلیت پیش‌نمایش چاپ در دست توسعه است.");
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // --- Initialize Flatpickr Date Picker ---
+        flatpickr(projectDateInput, {
+            locale: "fa",
+            dateFormat: "Y/m/d",
+            onChange: function(selectedDates, dateStr, instance) {
+                updateProjectName(); // Update project name when date changes
+            }
+        });
+
+        fetch(CSV_URL).then(r => r.text()).then(txt => {
+            const rows = txt.trim().split("\n").map(r =>
+            r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c =>
+                c.replace(/^"|"$/g, "").trim()
+            )
+            );
+            headers = rows.shift();
+            FACTORY_INDEX = headers.indexOf("کارخانه");
+            csvData = rows;
+            document.getElementById("loading").style.display = "none";
+            initMainPageFilters();
+            populateFactorySelectForQuotePage();
+            showPage('main-report-page');
+        }).catch(e => {
+            document.getElementById("loading").textContent = "خطا در بارگذاری داده‌ها: " + e.message;
+            console.error("Error loading CSV:", e);
+        });
+    });
+
   </script>
 </body>
 </html>
