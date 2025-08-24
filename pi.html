@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پروژه پیش فاکتور</title>
+    
+    <style>
+        /* --- General Styles --- */
+        body {
+            font-family: "Vazir", sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+            direction: rtl;
+        }
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .selectors {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .selector-group {
+            flex: 1;
+            min-width: 220px;
+        }
+        label {
+            font-weight: bold;
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 5px;
+        }
+        select, input[type="text"], input[type="number"], input[type="tel"] {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 15px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background: white;
+            cursor: pointer;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        select:focus, input[type="text"]:focus, input[type="number"]:focus, input[type="tel"]:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            outline: none;
+        }
+        input[disabled] {
+            background-color: #e9eef3;
+            cursor: not-allowed;
+            border-color: #dcdcdc;
+        }
+        .selected-list {
+            background: #e9eef3;
+            border: 1px solid #2c3e50;
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 8px;
+            min-height: 36px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .selected-item {
+            background: #2c3e50;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .selected-item button {
+            background: #e74c3c;
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            line-height: 16px;
+            font-size: 14px;
+        }
+        .buttons {
+            text-align: center;
+            margin-top: 15px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        .action-btn {
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.25s ease;
+        }
+        .action-btn:hover {
+            background-color: #1a2735;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+            white-space: nowrap;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px 12px;
+            font-size: 15px;
+            text-align: center;
+        }
+        th {
+            background-color: #2c3e50;
+            color: white;
+        }
+        .dark-gray-cell {
+            background-color: #e9eef3;
+            color: black;
+            font-weight: bold;
+        }
+        .merged-total-cell {
+            background-color: #555;
+            color: white;
+            font-weight: bold;
+            text-align: right !important;
+            padding-right: 15px !important;
+        }
+        .summary-totals {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background-color: #fcfcfc;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 17px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .summary-value {
+            background-color: #555;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 5px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 25px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 450px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+        }
+        .modal-content p {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .modal-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .modal-button:hover {
+            transform: translateY(-2px);
+        }
+        .modal-button.primary { background-color: #3498db; color: white; }
+        .modal-button.primary:hover { background-color: #2980b9; }
+        .modal-button.secondary { background-color: #2c3e50; color: white; }
+        .modal-button.secondary:hover { background-color: #1a2735; }
+        .modal-button.danger { background-color: #e74c3c; color: white; }
+        .modal-button.danger:hover { background-color: #c0392b; }
+        .modal-button.success { background-color: #28a745; color: white; }
+        .modal-button.success:hover { background-color: #218838; }
+        .modal-error-message {
+            color: #e74c3c;
+            font-size: 0.9em;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .discount-red {
+            color: red;
+            font-weight: bold;
+        }
+        .discount-green {
+            color: green;
+            font-weight: bold;
+        }
+        .sub-project-item {
+            background: #e9eef3;
+            border: 1px solid #2c3e50;
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 8px;
+            min-height: 36px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .sub-project-item:hover {
+            background-color: #dcdcdc;
+        }
+        .sub-project-item.selected {
+            background-color: #2c3e50;
+            color: white;
+        }
+        .hidden {
+            display: none;
+        }
+        hr {
+            border: 0;
+            height: 1px;
+            background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="main-page" class="container">
+    <h1>صفحه مدیریت پروژه شرکت ابرش</h1>
+    <h2 style="text-align: center;">تهیه کننده: عبدالصالح معروف</h2>
+    <div class="buttons">
+        <button id="project-button" class="action-btn">ورود به پنل کاربری</button>
+    </div>
+</div>
+
+<div id="project-menu-page" class="container hidden">
+    <h1>صفحه مدیریت پروژه شرکت ابرش</h1>
+    <div class="buttons">
+        <button id="new-project-button" class="action-btn">پروژه جدید</button>
+        <button id="retrieve-button" class="action-btn">بازیابی اطلاعات پروژه های قبلی</button>
+        <button id="compare-button" class="action-btn">مقایسه نموداری پروژه ها</button>
+    </div>
+    <div class="buttons" style="margin-top: 25px;">
+        <button id="back-to-main-button" class="action-btn">بازگشت</button>
+    </div>
+</div>
+
+<div id="project-name-page" class="container hidden">
+    <h1>تعریف پروژه جدید</h1>
+    <div class="selector-group" style="max-width: 400px; margin: 20px auto;">
+        <label for="new-project-name">نام پروژه را وارد کنید:</label>
+        <input type="text" id="new-project-name" autocomplete="off">
+    </div>
+    <div class="buttons">
+        <button id="confirm-project-name" class="action-btn">تایید</button>
+        <button id="back-from-project-name" class="action-btn">بازگشت به مرحله قبل</button>
+    </div>
+</div>
+
+<div id="new-project-page" class="container hidden">
+    <h1>
+        صفحه پیش‌فاکتور
+        <span id="page-counter" style="float: left; font-size: 16px; margin-top: 10px;">
+            صفحه ۱ از ۱
+        </span>
+    </h1>
+
+    <div class="selectors">
+        <div class="selector-group">
+            <label for="project-name-input">نام پروژه:</label>
+            <input type="text" id="project-name-input" disabled>
+        </div>
+        <div class="selector-group">
+            <label for="project-date">تاریخ:</label>
+            <input type="text" id="project-date" placeholder="انتخاب تاریخ" autocomplete="off">
+        </div>
+        <div class="selector-group">
+            <label for="factory-name-select">نام کارخانه:</label>
+            <input type="text" id="factory-name-select" list="factory-datalist" required autocomplete="off">
+        </div>
+        <div class="selector-group">
+            <label for="manager-name">نام مدیر پروژه:</label>
+            <input type="text" id="manager-name" list="manager-names-datalist" autocomplete="off">
+        </div>
+        <div class="selector-group">
+            <label for="manager-phone">شماره تلفن مدیر:</label>
+            <input type="tel" id="manager-phone" autocomplete="off">
+        </div>
+        <div class="selector-group">
+            <label for="project-address">آدرس پروژه:</label>
+            <input type="text" id="project-address" autocomplete="off">
+        </div>
+        <div class="selector-group">
+            <label for="referrer-name">نام معرف:</label>
+            <input type="text" id="referrer-name" list="referrer-names-datalist" autocomplete="off">
+        </div>
+        <div class="selector-group">
+            <label for="referrer-phone">شماره تلفن معرف:</label>
+            <input type="tel" id="referrer-phone" autocomplete="off">
+        </div>
+        <div class="selector-group">
+            <label for="project-discount">درصد تخفیف پروژه:</label>
+            <input type="number" id="project-discount" min="0" max="100" required autocomplete="off">
+        </div>
+    </div>
+
+    <hr>
+
+    <h3>اقلام پروژه</h3>
+    <table id="pre-invoice-table">
+        <thead>
+            <tr>
+                <th>ردیف</th>
+                <th>کد</th>
+                <th>نام محصول</th>
+                <th>تعداد</th>
+                <th>قیمت پایه</th>
+                <th>قیمت کل</th>
+                <th>% تخفیف</th>
+                <th>مبلغ تخفیف</th>
+                <th>قیمت نهایی</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5" class="merged-total-cell">جمع کل این صفحه:</td>
+                <td class="dark-gray-cell" id="page-total-price" data-value="0">0</td>
+                <td class="dark-gray-cell"></td>
+                <td class="dark-gray-cell" id="page-total-discount" data-value="0">0</td>
+                <td class="dark-gray-cell" id="page-final-price" data-value="0">0</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="buttons" style="margin-top: 20px;">
+        <button id="prev-page-button" class="action-btn" disabled>صفحه قبل</button>
+        <button id="next-page-button" class="action-btn" disabled>صفحه بعد</button>
+    </div>
+
+    <hr>
+
+    <div class="summary-totals">
+        <div class="summary-row">
+            <span>جمع کل رقم پروژه قبل از تخفیف:</span>
+            <span id="grand-total-price" data-value="0" class="summary-value">0</span>
+        </div>
+        <div class="summary-row">
+            <span>جمع کل تخفیف پروژه:</span>
+            <span id="grand-total-discount" data-value="0" class="summary-value">0</span>
+        </div>
+        <div class="summary-row">
+            <span>جمع کل رقم پروژه پس از تخفیف:</span>
+            <span id="grand-final-price" data-value="0" class="summary-value">0</span>
+        </div>
+    </div>
+
+    <div class="buttons" style="margin-top: 20px;">
+        <button id="save-button" class="action-btn hidden">ثبت پیش‌فاکتور</button>
+        <button id="edit-button" class="action-btn hidden">ویرایش اطلاعات پیش‌فاکتور</button>
+        <button id="back-to-menu-button" class="action-btn">بازگشت</button>
+    </div>
+</div>
+
+<div id="retrieve-project-modal" class="modal">
+    <div class="modal-content">
+        <h3>بازیابی پروژه</h3>
+        <div class="selector-group" style="width: 100%; margin: auto;">
+            <label for="main-project-select">انتخاب پروژه اصلی:</label>
+            <select id="main-project-select"></select>
+        </div>
+        <div id="sub-project-container" style="margin-top: 15px; display: none;">
+            <label>انتخاب زیرپروژه:</label>
+            <div id="sub-project-list" class="selected-list"></div>
+        </div>
+        <div class="modal-buttons" style="flex-direction: column;">
+            <button id="modal-add-subproject" class="modal-button primary" disabled>اضافه کردن پیش‌فاکتور جدید برای پروژه</button>
+            <button id="modal-confirm-retrieve" class="modal-button success" disabled>بازیابی زیرپروژه انتخابی</button>
+            <button id="modal-cancel-retrieve" class="modal-button danger">لغو</button>
+        </div>
+    </div>
+</div>
+
+<div id="new-subproject-modal" class="modal">
+    <div class="modal-content">
+        <h3 id="new-subproject-title">ایجاد پیش‌فاکتور جدید</h3>
+        <p>آیا تمایل به ثبت پیش‌فاکتور جدید برای پروژه <strong id="new-subproject-name"></strong> دارید؟</p>
+        <div class="selector-group">
+            <label for="new-subproject-factory-select">نام کارخانه برای زیرپروژه جدید:</label>
+            <input type="text" id="new-subproject-factory-select" list="factory-datalist" autocomplete="off">
+        </div>
+        <div class="modal-buttons">
+            <button id="modal-yes-add-subproject" class="modal-button primary">بله</button>
+            <button id="modal-no-add-subproject" class="modal-button danger">خیر</button>
+        </div>
+    </div>
+</div>
+
+<div id="next-page-modal" class="modal">
+    <div class="modal-content">
+        <p>تمام ۱۰ سطر پر شده‌اند. آیا مایل به اضافه کردن موارد بعدی به پیش فاکتور هستید؟</p>
+        <div class="modal-buttons">
+            <button id="modal-yes-next-page" class="modal-button success">بله</button>
+            <button id="modal-no-next-page" class="modal-button secondary">خیر</button>
+        </div>
+    </div>
+</div>
+
+<div id="save-modal" class="modal">
+    <div class="modal-content">
+        <p>مایل به ذخیره پیش فاکتور هستید؟</p>
+        <div class="modal-buttons">
+            <button id="modal-yes-save" class="modal-button primary">بله</button>
+            <button id="modal-no-save" class="modal-button danger">خیر</button>
+        </div>
+    </div>
+</div>
+
+<div id="confirm-save-modal" class="modal">
+    <div class="modal-content">
+        <p id="confirm-save-message">اطلاعات این پروژه قبلا ذخیره شده است. آیا مایل هستید تغییرات جدید جایگزین اطلاعات قبلی شوند؟</p>
+        <div class="modal-buttons">
+            <button id="modal-yes-confirm-save" class="modal-button success">بله</button>
+            <button id="modal-no-confirm-save" class="modal-button danger">خیر</button>
+        </div>
+    </div>
+</div>
+
+<div id="confirm-update-modal" class="modal">
+    <div class="modal-content">
+        <p id="confirm-update-message">
+            پیش فاکتور انتخابی جهت کارخانجات دیگر هم صادر شده است. در صورت ثبت تغییرات، همه اقلام (به جز درصد تخفیف) در تمامی زیرپروژه‌ها نیز به‌روزرسانی خواهند شد. آیا مایل به ثبت تغییرات هستید؟
+        </p>
+        <div class="modal-buttons">
+            <button id="modal-yes-update" class="modal-button success">بله</button>
+            <button id="modal-no-update" class="modal-button danger">خیر</button>
+        </div>
+    </div>
+</div>
+
+<div id="error-modal" class="modal">
+    <div class="modal-content">
+        <p id="error-message"></p>
+        <div class="modal-buttons">
+            <button id="modal-close-error" class="modal-button danger">تایید</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker-0.4.5.min.js"></script>
+<script>
+    if (typeof jQuery === 'undefined') {
+        alert('خطا: کتابخانه jQuery بارگذاری نشده است. لطفاً اتصال اینترنت خود را بررسی کنید.');
+    } else {
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw9S_VYSWi-_ILwBTBROi0N8KrPFb51bofJOqt39E4gOSIbXx_omk2panptN0UmkiN4iA/exec";
+            let productsData = [];
+            let currentPage = 1;
+            let invoicePages = [];
+            const MAX_ROWS = 10;
+            let isUpdateMode = false;
+            let isNewSubProjectMode = false;
+            let allProjectsData = {};
+            let currentProjectName = '';
+            let currentFactoryName = '';
+            let selectedSubProject = null;
+            let isEditing = false;
+            let isMasterProject = false;
+            let lastAction = '';
+            let managersAndReferrers = {};
+
+            const mainPage = document.getElementById('main-page');
+            const projectMenuPage = document.getElementById('project-menu-page');
+            const newProjectPage = document.getElementById('new-project-page');
+            const projectNamePage = document.getElementById('project-name-page');
+            const projectButton = document.getElementById('project-button');
+            const newProjectButton = document.getElementById('new-project-button');
+            const retrieveButton = document.getElementById('retrieve-button');
+            const backToMainButton = document.getElementById('back-to-main-button');
+            const preInvoiceTableBody = document.querySelector('#pre-invoice-table tbody');
+            const saveButton = document.getElementById('save-button');
+            const editButton = document.getElementById('edit-button');
+            const backToMenuButton = document.getElementById('back-to-menu-button');
+            const projectNameInput = document.getElementById('project-name-input');
+            const projectDateInput = document.getElementById('project-date');
+            const factoryNameInput = document.getElementById('factory-name-select');
+            const managerNameInput = document.getElementById('manager-name');
+            const managerPhoneInput = document.getElementById('manager-phone');
+            const projectAddressInput = document.getElementById('project-address');
+            const referrerNameInput = document.getElementById('referrer-name');
+            const referrerPhoneInput = document.getElementById('referrer-phone');
+            const projectDiscountInput = document.getElementById('project-discount');
+            const pageCounter = document.getElementById('page-counter');
+            const prevPageButton = document.getElementById('prev-page-button');
+            const nextPageButton = document.getElementById('next-page-button');
+
+            const retrieveProjectModal = document.getElementById('retrieve-project-modal');
+            const mainProjectSelect = document.getElementById('main-project-select');
+            const subProjectContainer = document.getElementById('sub-project-container');
+            const subProjectList = document.getElementById('sub-project-list');
+            const addSubProjectButton = document.getElementById('modal-add-subproject');
+            const modalConfirmRetrieve = document.getElementById('modal-confirm-retrieve');
+            const modalCancelRetrieve = document.getElementById('modal-cancel-retrieve');
+            const newSubprojectModal = document.getElementById('new-subproject-modal');
+            const newSubprojectName = document.getElementById('new-subproject-name');
+            const newSubprojectFactorySelect = document.getElementById('new-subproject-factory-select');
+            const modalYesAddSubproject = document.getElementById('modal-yes-add-subproject');
+            const modalNoAddSubproject = document.getElementById('modal-no-add-subproject');
+
+            const nextPageModal = document.getElementById('next-page-modal');
+            const saveModal = document.getElementById('save-modal');
+            const confirmSaveModal = document.getElementById('confirm-save-modal');
+            const confirmUpdateModal = document.getElementById('confirm-update-modal');
+            const modalYesNextPage = document.getElementById('modal-yes-next-page');
+            const modalNoNextPage = document.getElementById('modal-no-next-page');
+            const modalYesSave = document.getElementById('modal-yes-save');
+            const modalNoSave = document.getElementById('modal-no-save');
+            const modalYesConfirmSave = document.getElementById('modal-yes-confirm-save');
+            const modalNoConfirmSave = document.getElementById('modal-no-confirm-save');
+            const modalYesUpdate = document.getElementById('modal-yes-update');
+            const modalNoUpdate = document.getElementById('modal-no-update');
+
+            const newProjectNameInput = document.getElementById('new-project-name');
+            const confirmProjectNameButton = document.getElementById('confirm-project-name');
+            const backFromProjectNameButton = document.getElementById('back-from-project-name');
+
+            const errorModal = document.getElementById('error-modal');
+            const errorMessage = document.getElementById('error-message');
+            const modalCloseError = document.getElementById('modal-close-error');
+
+            const showPage = (pageToShow) => {
+                [mainPage, projectMenuPage, newProjectPage, projectNamePage].forEach(page => page.classList.add('hidden'));
+                pageToShow.classList.remove('hidden');
+            };
+
+            const showModal = (modal) => {
+                const allModals = document.querySelectorAll('.modal');
+                allModals.forEach(m => m.style.display = 'none');
+                modal.style.display = 'flex';
+            };
+
+            const hideAllModals = () => {
+                const allModals = document.querySelectorAll('.modal');
+                allModals.forEach(m => m.style.display = 'none');
+            };
+
+            const showErrorModal = (message) => {
+                errorMessage.textContent = message;
+                showModal(errorModal);
+            };
+
+            const parseCSV = (csvText) => {
+                const lines = csvText.trim().split('\n');
+                const headers = lines[0].split(',').map(header => header.trim().replace(/"/g, ''));
+                const data = lines.slice(1).map(line => {
+                    const values = line.split(',').map(value => value.trim().replace(/"/g, ''));
+                    const rowData = {};
+                    headers.forEach((header, index) => {
+                        rowData[header] = values[index] || '';
+                    });
+                    return rowData;
+                });
+                return data;
+            };
+
+            const processProductData = (rawData) => {
+                const latestProducts = {};
+                rawData.forEach(item => {
+                    const key = item['کد'] + '|' + item['کارخانه'];
+                    const itemDate = new Date(item['تاریخ']);
+                    if (!latestProducts[key] || new Date(latestProducts[key]['تاریخ']) < itemDate) {
+                        latestProducts[key] = item;
+                    }
+                });
+                return Object.values(latestProducts);
+            };
+
+            const fetchProductData = async () => {
+                try {
+                    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSbo5OpFQ6AWpo1vzXAA8TBa8pelpMkGnFfiE9w4gS64wnPh1DBkqn0jeIdebIXXA/pub?output=csv";
+                    const response = await fetch(CSV_URL);
+                    const csvText = await response.text();
+                    const allProducts = parseCSV(csvText);
+
+                    productsData = processProductData(allProducts);
+
+                    if (productsData.length === 0) {
+                        showErrorModal('اطلاعاتی در فایل CSV شما وجود ندارد.');
+                    } else {
+                        populateFactoryDatalist(productsData);
+                    }
+                } catch (error) {
+                    showErrorModal('خطا در دریافت اطلاعات محصولات: ' + error.message);
+                }
+            };
+            
+            const fetchProjectsData = async () => {
+                try {
+                    const response = await fetch(WEB_APP_URL + '?action=getProjects');
+                    if (!response.ok) {
+                        throw new Error('خطا در دریافت پاسخ از سرور: ' + response.statusText);
+                    }
+                    const result = await response.json();
+                    if (result.result === 'success') {
+                        allProjectsData = result.data;
+                        populateMainProjectSelect(allProjectsData);
+                    } else {
+                        showErrorModal('خطا در دریافت لیست پروژه‌ها: ' + result.error);
+                    }
+                } catch (error) {
+                    showErrorModal('خطا در برقراری ارتباط با سرور برای دریافت پروژه‌ها.');
+                    console.error('Error fetching project list:', error);
+                }
+            };
+            
+            const fetchManagersAndReferrers = async () => {
+                try {
+                    const response = await fetch(WEB_APP_URL + '?action=getManagersAndReferrers');
+                    if (!response.ok) throw new Error('خطا در دریافت پاسخ از سرور: ' + response.statusText);
+                    
+                    const result = await response.json();
+                    if (result.result === 'success') {
+                        managersAndReferrers = result.data;
+                        populateManagerAndReferrerDatalists();
+                    } else {
+                        showErrorModal('خطا در دریافت اطلاعات مدیران و معرف‌ها: ' + result.error);
+                    }
+                } catch(error) {
+                    showErrorModal('خطا در برقراری ارتباط با سرور برای دریافت اطلاعات مدیران و معرف‌ها.');
+                    console.error('Error fetching managers and referrers:', error);
+                }
+            };
+
+            const populateManagerAndReferrerDatalists = () => {
+                const managerDatalist = document.createElement('datalist');
+                managerDatalist.id = 'manager-names-datalist';
+                const referrerDatalist = document.createElement('datalist');
+                referrerDatalist.id = 'referrer-names-datalist';
+                
+                const uniqueManagers = [...new Set(Object.keys(managersAndReferrers.managers))].filter(n => n);
+                const uniqueReferrers = [...new Set(Object.keys(managersAndReferrers.referrers))].filter(n => n);
+
+                uniqueManagers.forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    managerDatalist.appendChild(option);
+                });
+
+                uniqueReferrers.forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    referrerDatalist.appendChild(option);
+                });
+
+                const existingManagerDatalist = document.getElementById('manager-names-datalist');
+                if(existingManagerDatalist) existingManagerDatalist.remove();
+                document.body.appendChild(managerDatalist);
+
+                const existingReferrerDatalist = document.getElementById('referrer-names-datalist');
+                if(existingReferrerDatalist) existingReferrerDatalist.remove();
+                document.body.appendChild(referrerDatalist);
+            };
+
+            const fetchProjectDetails = async (projectName, factory) => {
+                try {
+                    const response = await fetch(`${WEB_APP_URL}?action=getProjectDetails&projectName=${encodeURIComponent(projectName)}&factoryName=${encodeURIComponent(factory)}`);
+                    if (!response.ok) {
+                        throw new Error('خطا در دریافت پاسخ از سرور: ' + response.statusText);
+                    }
+                    const result = await response.json();
+                    if (result.result === 'success') {
+                        populateFormWithData(result.data);
+                        hideAllModals();
+                        showPage(newProjectPage);
+                        isUpdateMode = true;
+                        isNewSubProjectMode = false;
+                        isMasterProject = (factory === 'ابرش');
+                        toggleEditMode(false);
+                        editButton.classList.remove('hidden');
+                        lastAction = 'retrieve';
+                        showErrorModal('پروژه با موفقیت بازیابی شد.');
+                    } else {
+                        showErrorModal('خطا در بازیابی اطلاعات پروژه: ' + result.error);
+                    }
+                } catch (error) {
+                    showErrorModal('خطا در برقراری ارتباط با سرور.');
+                    console.error('Error fetching project details:', error);
+                }
+            };
+            
+            const fetchProjectItems = async (projectName) => {
+                try {
+                    const response = await fetch(`${WEB_APP_URL}?action=getProjectItems&projectName=${encodeURIComponent(projectName)}`);
+                    const result = await response.json();
+                    if (result.result === 'success') {
+                        return result.data || null;
+                    } else {
+                        showErrorModal('خطا در دریافت اقلام پروژه اصلی: ' + result.error);
+                        return null;
+                    }
+                } catch (error) {
+                    showErrorModal('خطا در برقراری ارتباط با سرور برای دریافت اقلام پروژه.');
+                    console.error('Error fetching project items:', error);
+                    return null;
+                }
+            };
+            
+            const checkIfProjectHasSubProjects = async (projectName) => {
+                try {
+                    const response = await fetch(`${WEB_APP_URL}?action=checkSubProjects&projectName=${encodeURIComponent(projectName)}`);
+                    const result = await response.json();
+                    if (result.result === 'success') {
+                        return result.hasSubProjects;
+                    } else {
+                        showErrorModal('خطا در بررسی زیرپروژه‌ها: ' + result.error);
+                        return false;
+                    }
+                } catch (error) {
+                    showErrorModal('خطا در برقراری ارتباط با سرور برای بررسی زیرپروژه‌ها.');
+                    console.error('Error checking sub-projects:', error);
+                    return false;
+                }
+            };
+
+
+            const populateMainProjectSelect = (projects) => {
+                mainProjectSelect.innerHTML = `<option value="">انتخاب کنید...</option>`;
+                Object.keys(projects).forEach(projectName => {
+                    const option = document.createElement('option');
+                    option.value = projectName;
+                    option.textContent = projectName;
+                    mainProjectSelect.appendChild(option);
+                });
+                mainProjectSelect.addEventListener('change', (e) => {
+                    const selectedProject = e.target.value;
+                    if (selectedProject) {
+                        currentProjectName = selectedProject;
+                        populateSubProjectList(projects[selectedProject]);
+                        addSubProjectButton.disabled = false;
+                    } else {
+                        subProjectContainer.style.display = 'none';
+                        subProjectList.innerHTML = '';
+                        addSubProjectButton.disabled = true;
+                        modalConfirmRetrieve.disabled = true;
+                        selectedSubProject = null;
+                    }
+                });
+            };
+
+            const populateSubProjectList = (subProjects) => {
+                subProjectList.innerHTML = '';
+                subProjectContainer.style.display = 'block';
+                if (subProjects && subProjects.length > 0) {
+                    subProjects.forEach(subProject => {
+                        const item = document.createElement('div');
+                        item.className = 'sub-project-item';
+                        item.textContent = subProject;
+                        item.addEventListener('click', () => {
+                            Array.from(subProjectList.children).forEach(child => child.classList.remove('selected'));
+                            item.classList.add('selected');
+                            selectedSubProject = subProject;
+                            modalConfirmRetrieve.disabled = false;
+                        });
+                        subProjectList.appendChild(item);
+                    });
+                } else {
+                    subProjectContainer.style.display = 'none';
+                    subProjectList.innerHTML = '';
+                    selectedSubProject = null;
+                    modalConfirmRetrieve.disabled = true;
+                }
+            };
+            
+            const populateFactoryDatalist = (data) => {
+                const uniqueFactories = [...new Set(data.map(item => item['کارخانه']))].filter(f => f);
+                const datalist = document.createElement('datalist');
+                datalist.id = 'factory-datalist';
+                uniqueFactories.forEach(factory => {
+                    const option = document.createElement('option');
+                    option.value = factory;
+                    datalist.appendChild(option);
+                });
+                const existingDatalist = document.getElementById('factory-datalist');
+                if(existingDatalist){
+                    existingDatalist.remove();
+                }
+                document.body.appendChild(datalist);
+                factoryNameInput.setAttribute('list', 'factory-datalist');
+                newSubprojectFactorySelect.setAttribute('list', 'factory-datalist');
+            };
+
+            const populateProductDatalists = () => {
+                const selectedFactory = factoryNameInput.value;
+                const filteredProducts = selectedFactory
+                    ? productsData.filter(p => p['کارخانه'] === selectedFactory)
+                    : [];
+
+                let codeDatalist = document.getElementById('code-datalist');
+                if (!codeDatalist) {
+                    codeDatalist = document.createElement('datalist');
+                    codeDatalist.id = 'code-datalist';
+                    document.body.appendChild(codeDatalist);
+                }
+                codeDatalist.innerHTML = filteredProducts.map(p => `<option value="${p['کد']}"></option>`).join('');
+
+                let nameDatalist = document.getElementById('name-datalist');
+                if (!nameDatalist) {
+                    nameDatalist = document.createElement('datalist');
+                    nameDatalist.id = 'name-datalist';
+                    document.body.appendChild(nameDatalist);
+                }
+                nameDatalist.innerHTML = filteredProducts.map(p => `<option value="${p['نام محصول']}"></option>`).join('');
+            };
+
+            const attachEventListenersToRow = (row) => {
+                const codeInput = row.querySelector('.code-input');
+                const nameInput = row.querySelector('.product-name-input');
+                const quantityInput = row.querySelector('.quantity-input');
+                const discountInput = row.querySelector('.discount-percent-input');
+
+                const updateRowAndTotals = () => {
+                    updateRow(row);
+                    updatePageTotals();
+                    updateGrandTotals();
+                };
+
+                codeInput.addEventListener('change', (e) => {
+                    const product = productsData.find(p => p['کد'] === e.target.value && p['کارخانه'] === factoryNameInput.value);
+                    if (product) {
+                        nameInput.value = product['نام محصول'];
+                        const projectDiscount = parseFloat(projectDiscountInput.value) || 0;
+                        discountInput.value = projectDiscount;
+                    } else {
+                        nameInput.value = '';
+                        discountInput.value = '';
+                    }
+                    updateRowAndTotals();
+                });
+
+                nameInput.addEventListener('change', (e) => {
+                    const product = productsData.find(p => p['نام محصول'] === e.target.value && p['کارخانه'] === factoryNameInput.value);
+                    if (product) {
+                        codeInput.value = product['کد'];
+                        const projectDiscount = parseFloat(projectDiscountInput.value) || 0;
+                        discountInput.value = projectDiscount;
+                    } else {
+                        codeInput.value = '';
+                        discountInput.value = '';
+                    }
+                    updateRowAndTotals();
+                });
+
+                quantityInput.addEventListener('change', updateRowAndTotals);
+                discountInput.addEventListener('change', updateRowAndTotals);
+                
+                codeInput.addEventListener('keydown', handleTableEnterKey);
+                nameInput.addEventListener('keydown', handleTableEnterKey);
+                quantityInput.addEventListener('keydown', handleTableEnterKey);
+                discountInput.addEventListener('keydown', handleTableEnterKey);
+            };
+
+            const createTableRow = (item = {}) => {
+                const row = document.createElement('tr');
+                const code = item.code || '';
+                const name = item.name || '';
+                const quantity = item.quantity || '';
+                const basePrice = item.basePrice || '';
+                const totalPrice = item.totalPrice || 0;
+                const discountPercent = item.discountPercent || '';
+                const discountAmount = item.discountAmount || 0;
+                const finalPrice = item.finalPrice || 0;
+
+                const rowContent = `
+                    <td><span class="row-number"></span></td>
+                    <td><input type="text" class="code-input" list="code-datalist" value="${code}"></td>
+                    <td><input type="text" class="product-name-input" list="name-datalist" value="${name}"></td>
+                    <td><input type="number" class="quantity-input" min="1" value="${quantity}"></td>
+                    <td><input type="text" class="base-price-input dark-gray-cell" disabled data-value="${basePrice}" value="${basePrice ? Math.round(basePrice).toLocaleString('fa-IR') : ''}"></td>
+                    <td><input type="text" class="total-price-output dark-gray-cell" disabled data-value="${totalPrice}" value="${Math.round(totalPrice).toLocaleString('fa-IR')}"></td>
+                    <td><input type="number" class="discount-percent-input" min="0" max="100" value="${discountPercent}"></td>
+                    <td><input type="text" class="discount-amount-output dark-gray-cell" disabled data-value="${discountAmount}" value="${Math.round(discountAmount).toLocaleString('fa-IR')}"></td>
+                    <td><input type="text" class="final-price-output dark-gray-cell" disabled data-value="${finalPrice}" value="${Math.round(finalPrice).toLocaleString('fa-IR')}"></td>
+                `;
+                row.innerHTML = rowContent;
+                preInvoiceTableBody.appendChild(row);
+                attachEventListenersToRow(row);
+                if (isUpdateMode) updateRow(row);
+            };
+
+            const updateRow = (row) => {
+                const code = row.querySelector('.code-input').value.trim();
+                const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+                const rowDiscountInput = row.querySelector('.discount-percent-input');
+                let rowDiscount = parseFloat(rowDiscountInput.value);
+                const projectDiscount = parseFloat(projectDiscountInput.value) || 0;
+                const product = productsData.find(p => p['کد'] === code && p['کارخانه'] === factoryNameInput.value);
+
+                if (product && quantity > 0) {
+                    const basePrice = parseFloat(product['قیمت پایه']) || 0;
+                    const totalPrice = basePrice * quantity;
+                    
+                    row.querySelector('.base-price-input').value = Math.round(basePrice).toLocaleString('fa-IR');
+                    row.querySelector('.base-price-input').dataset.value = basePrice;
+                    row.querySelector('.total-price-output').value = Math.round(totalPrice).toLocaleString('fa-IR');
+                    row.querySelector('.total-price-output').dataset.value = totalPrice;
+                    
+                    if (isNaN(rowDiscount) || rowDiscountInput.value === '') {
+                        rowDiscount = projectDiscount;
+                        rowDiscountInput.value = projectDiscount;
+                        rowDiscountInput.classList.remove('discount-red', 'discount-green');
+                    } else {
+                        if (rowDiscount < projectDiscount) {
+                            rowDiscountInput.classList.add('discount-red');
+                            rowDiscountInput.classList.remove('discount-green');
+                        } else if (rowDiscount > projectDiscount) {
+                            rowDiscountInput.classList.add('discount-green');
+                            rowDiscountInput.classList.remove('discount-red');
+                        } else {
+                            rowDiscountInput.classList.remove('discount-red', 'discount-green');
+                        }
+                    }
+
+                    const discountAmount = (totalPrice * rowDiscount) / 100;
+                    const finalPrice = totalPrice - discountAmount;
+                    
+                    row.querySelector('.discount-amount-output').value = Math.round(discountAmount).toLocaleString('fa-IR');
+                    row.querySelector('.discount-amount-output').dataset.value = discountAmount;
+                    row.querySelector('.final-price-output').value = Math.round(finalPrice).toLocaleString('fa-IR');
+                    row.querySelector('.final-price-output').dataset.value = finalPrice;
+                } else {
+                    const inputs = row.querySelectorAll('.base-price-input, .total-price-output, .discount-percent-input, .discount-amount-output, .final-price-output');
+                    inputs.forEach(input => {
+                        if (input.classList.contains('discount-percent-input')) {
+                            input.value = '';
+                            input.classList.remove('discount-red', 'discount-green');
+                        } else {
+                            input.value = '';
+                            input.dataset.value = '0';
+                        }
+                    });
+                }
+            };
+
+            const updatePageTotals = () => {
+                let pageTotalPrice = 0;
+                let pageTotalDiscount = 0;
+                let pageFinalPrice = 0;
+                const rows = preInvoiceTableBody.querySelectorAll('tr');
+                rows.forEach((row) => {
+                    const code = row.querySelector('.code-input').value.trim();
+                    if(code){
+                        const totalPriceValue = parseFloat(row.querySelector('.total-price-output')?.dataset.value || '0');
+                        const discountAmountValue = parseFloat(row.querySelector('.discount-amount-output')?.dataset.value || '0');
+                        const finalPriceValue = parseFloat(row.querySelector('.final-price-output')?.dataset.value || '0');
+                        pageTotalPrice += totalPriceValue;
+                        pageTotalDiscount += discountAmountValue;
+                        pageFinalPrice += finalPriceValue;
+                    }
+                });
+                document.getElementById('page-total-price').textContent = Math.round(pageTotalPrice).toLocaleString('fa-IR');
+                document.getElementById('page-total-price').dataset.value = pageTotalPrice;
+                document.getElementById('page-total-discount').textContent = Math.round(pageTotalDiscount).toLocaleString('fa-IR');
+                document.getElementById('page-total-discount').dataset.value = pageTotalDiscount;
+                document.getElementById('page-final-price').textContent = Math.round(pageFinalPrice).toLocaleString('fa-IR');
+                document.getElementById('page-final-price').dataset.value = pageFinalPrice;
+                updateRowNumbers();
+            };
+
+            const updateRowNumbers = () => {
+                const rows = preInvoiceTableBody.querySelectorAll('tr');
+                const startNumber = (currentPage - 1) * MAX_ROWS + 1;
+                rows.forEach((row, index) => {
+                    const code = row.querySelector('.code-input').value.trim();
+                    if (code) {
+                        row.querySelector('.row-number').textContent = startNumber + index;
+                    } else {
+                        row.querySelector('.row-number').textContent = '';
+                    }
+                });
+            };
+
+            const updateGrandTotals = () => {
+                let totalSumPrice = 0;
+                let totalSumDiscount = 0;
+                let totalSumFinal = 0;
+
+                invoicePages.forEach(page => {
+                    totalSumPrice += page.totals.totalPrice;
+                    totalSumDiscount += page.totals.totalDiscount;
+                    totalSumFinal += page.totals.finalPrice;
+                });
+                
+                const currentPageData = getPageData();
+                const currentTotalData = calculatePageTotals(currentPageData);
+                totalSumPrice += currentTotalData.totalPrice;
+                totalSumDiscount += currentTotalData.totalDiscount;
+                totalSumFinal += currentTotalData.finalPrice;
+                
+                document.getElementById('grand-total-price').textContent = Math.round(totalSumPrice).toLocaleString('fa-IR');
+                document.getElementById('grand-total-price').dataset.value = totalSumPrice;
+                document.getElementById('grand-total-discount').textContent = Math.round(totalSumDiscount).toLocaleString('fa-IR');
+                document.getElementById('grand-total-discount').dataset.value = totalSumDiscount;
+                document.getElementById('grand-final-price').textContent = Math.round(totalSumFinal).toLocaleString('fa-IR');
+                document.getElementById('grand-final-price').dataset.value = totalSumFinal;
+            };
+
+            const handleMainFormEnterKey = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const activeElement = document.activeElement;
+                    const mainFormInputs = Array.from(document.querySelectorAll('#new-project-page .selectors input:not([disabled])'));
+                    const currentIndex = mainFormInputs.indexOf(activeElement);
+                    if (currentIndex > -1) {
+                        if (activeElement.id === 'factory-name-select' && !activeElement.value.trim()) {
+                            showErrorModal('لطفا نام یک کارخانه را از لیست انتخاب نمایید');
+                            activeElement.focus();
+                            return;
+                        }
+                        if (activeElement.id === 'project-discount') {
+                            const discountValue = parseFloat(activeElement.value);
+                            if (!activeElement.value.trim()) {
+                                showErrorModal('درج درصد تخفیف الزامی است');
+                                activeElement.focus();
+                                return;
+                            }
+                            if (isNaN(discountValue) || discountValue < 1 || discountValue > 100) {
+                                showErrorModal('درصد تخفیف می‌بایست عددی بین 1 تا 100 باشد');
+                                activeElement.focus();
+                                return;
+                            }
+                            if (isNewSubProjectMode) {
+                                saveButton.focus(); // Special behavior for sub-project mode
+                                return;
+                            }
+                        }
+                        if (currentIndex < mainFormInputs.length - 1) {
+                            mainFormInputs[currentIndex + 1].focus();
+                        } else {
+                            const firstRowCodeInput = preInvoiceTableBody.querySelector('tr .code-input');
+                            if (firstRowCodeInput) {
+                                firstRowCodeInput.focus();
+                            }
+                        }
+                    }
+                }
+            };
+
+            const handleTableEnterKey = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const activeElement = document.activeElement;
+                    const currentRow = activeElement.closest('tr');
+                    const allRows = preInvoiceTableBody.querySelectorAll('tr');
+                    const isLastRow = currentRow === allRows[allRows.length - 1];
+                    const inputsInRow = Array.from(currentRow.querySelectorAll('input:not([disabled])'));
+                    const inputIndex = inputsInRow.indexOf(activeElement);
+                    const codeInput = currentRow.querySelector('.code-input');
+                    const nameInput = currentRow.querySelector('.product-name-input');
+                    const quantityInput = currentRow.querySelector('.quantity-input');
+                    if (inputIndex > -1) {
+                        if ((inputIndex === 0 || inputIndex === 1) && (!codeInput.value.trim() && !nameInput.value.trim())) {
+                            showErrorModal('لطفا یک کالا انتخاب کنید');
+                            codeInput.focus();
+                            return;
+                        }
+                        if (inputIndex === 2 && !quantityInput.value.trim()) {
+                            showErrorModal('لطفا تعداد کالای انتخابی را وارد نمایید');
+                            quantityInput.focus();
+                            return;
+                        }
+                    }
+                    if (inputIndex < inputsInRow.length - 1) {
+                        inputsInRow[inputIndex + 1].focus();
+                    } else if (isLastRow) {
+                        const filledRowCount = Array.from(allRows).filter(row => row.querySelector('.code-input').value.trim()).length;
+                        if (filledRowCount === MAX_ROWS) {
+                            showModal(nextPageModal);
+                        } else {
+                            createTableRow();
+                            const nextRow = currentRow.nextElementSibling;
+                            if (nextRow) {
+                                nextRow.querySelector('.code-input').focus();
+                            }
+                        }
+                    } else {
+                        const nextRow = currentRow.nextElementSibling;
+                        if (nextRow) {
+                            nextRow.querySelector('.code-input').focus();
+                        }
+                    }
+                }
+            };
+
+            document.querySelectorAll('#new-project-page .selectors input:not([disabled])').forEach(input => {
+                input.addEventListener('keydown', handleMainFormEnterKey);
+            });
+            preInvoiceTableBody.addEventListener('keydown', handleTableEnterKey);
+
+            const startNewPage = () => {
+                saveCurrentPageData();
+                preInvoiceTableBody.innerHTML = '';
+                for (let i = 0; i < MAX_ROWS; i++) {
+                    createTableRow();
+                }
+                currentPage++;
+                updatePageTotals();
+                updateGrandTotals();
+                updatePageCounter();
+                updateNavigationButtons();
+                preInvoiceTableBody.querySelector('.code-input').focus();
+            };
+
+            const updatePageCounter = () => {
+                const filledRowsOnCurrentPage = getPageData().length;
+                const totalPages = invoicePages.length + (filledRowsOnCurrentPage > 0 ? 1 : 0);
+                pageCounter.textContent = `صفحه ${currentPage} از ${totalPages}`;
+            };
+
+            const getPageData = () => {
+                const currentPageData = [];
+                const rows = preInvoiceTableBody.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const code = row.querySelector('.code-input').value.trim();
+                    if (code) {
+                        const rowData = {};
+                        rowData.code = code;
+                        rowData.name = row.querySelector('.product-name-input').value;
+                        rowData.quantity = row.querySelector('.quantity-input').value;
+                        rowData.basePrice = parseFloat(row.querySelector('.base-price-input').dataset.value) || 0;
+                        rowData.totalPrice = parseFloat(row.querySelector('.total-price-output').dataset.value);
+                        rowData.discountPercent = parseFloat(row.querySelector('.discount-percent-input').value);
+                        rowData.discountAmount = parseFloat(row.querySelector('.discount-amount-output').dataset.value);
+                        rowData.finalPrice = parseFloat(row.querySelector('.final-price-output').dataset.value);
+                        currentPageData.push(rowData);
+                    }
+                });
+                return currentPageData;
+            }
+
+            const calculatePageTotals = (pageItems) => {
+                let pageTotalPrice = 0;
+                let pageTotalDiscount = 0;
+                let pageFinalPrice = 0;
+                pageItems.forEach(item => {
+                    pageTotalPrice += parseFloat(item.totalPrice) || 0;
+                    pageTotalDiscount += parseFloat(item.discountAmount) || 0;
+                    pageFinalPrice += parseFloat(item.finalPrice) || 0;
+                });
+                return {
+                    totalPrice: pageTotalPrice,
+                    totalDiscount: pageTotalDiscount,
+                    finalPrice: pageFinalPrice
+                };
+            };
+
+            const updateNavigationButtons = () => {
+                prevPageButton.disabled = currentPage === 1;
+                const filledRowsOnCurrentPage = getPageData().length;
+                const totalPages = invoicePages.length + (filledRowsOnCurrentPage > 0 ? 1 : 0);
+                nextPageButton.disabled = currentPage === totalPages;
+            };
+
+            const saveCurrentPageData = () => {
+                const currentPageData = getPageData();
+                const pageTotals = calculatePageTotals(currentPageData);
+                invoicePages[currentPage - 1] = {
+                    items: currentPageData,
+                    totals: pageTotals
+                };
+            };
+
+            const loadPageData = (pageNumber) => {
+                if (pageNumber < 1 || pageNumber > invoicePages.length + 1) {
+                    return;
+                }
+                preInvoiceTableBody.innerHTML = '';
+                const pageData = invoicePages[pageNumber - 1];
+                
+                const itemsToLoad = (pageData && pageData.items) ? pageData.items : [];
+                itemsToLoad.forEach(item => {
+                    createTableRow(item);
+                });
+
+                for (let i = itemsToLoad.length; i < MAX_ROWS; i++) {
+                    createTableRow();
+                }
+
+                currentPage = pageNumber;
+                updatePageTotals();
+                updateGrandTotals();
+                updatePageCounter();
+                updateNavigationButtons();
+            };
+
+            const populateFormWithData = (data) => {
+                const mainProjectName = data.projectName;
+                const factoryFromData = data.factoryName;
+                
+                projectNameInput.value = mainProjectName;
+                projectDateInput.value = data.projectDate;
+                factoryNameInput.value = factoryFromData;
+                managerNameInput.value = data.managerName;
+                managerPhoneInput.value = data.managerPhone;
+                projectAddressInput.value = data.projectAddress;
+                referrerNameInput.value = data.referrerName;
+                referrerPhoneInput.value = data.referrerPhone;
+                projectDiscountInput.value = data.projectDiscount;
+                
+                document.getElementById('grand-total-price').textContent = Math.round(data.grandTotals.totalPrice).toLocaleString('fa-IR');
+                document.getElementById('grand-total-price').dataset.value = data.grandTotals.totalPrice;
+                document.getElementById('grand-total-discount').textContent = Math.round(data.grandTotals.totalDiscount).toLocaleString('fa-IR');
+                document.getElementById('grand-total-discount').dataset.value = data.grandTotals.totalDiscount;
+                document.getElementById('grand-final-price').textContent = Math.round(data.grandTotals.finalPrice).toLocaleString('fa-IR');
+                document.getElementById('grand-final-price').dataset.value = data.grandTotals.finalPrice;
+
+                invoicePages = [];
+                let remainingItems = [...data.items];
+                while (remainingItems.length > 0) {
+                    const pageItems = remainingItems.splice(0, MAX_ROWS);
+                    const pageTotals = calculatePageTotals(pageItems);
+                    const pageData = {
+                        items: pageItems,
+                        totals: pageTotals
+                    };
+                    invoicePages.push(pageData);
+                }
+                
+                currentPage = 1;
+                loadPageData(currentPage);
+                updatePageCounter();
+                
+                isUpdateMode = true;
+                isNewSubProjectMode = false;
+                isMasterProject = (factoryFromData === 'ابرش');
+                toggleEditMode(false);
+                editButton.classList.remove('hidden');
+                saveButton.classList.add('hidden');
+            };
+            
+            const populateFormForNewSubproject = (data) => {
+                projectDateInput.value = data.projectDate;
+                managerNameInput.value = data.managerName;
+                managerPhoneInput.value = data.managerPhone;
+                projectAddressInput.value = data.projectAddress;
+                referrerNameInput.value = data.referrerName;
+                referrerPhoneInput.value = data.referrerPhone;
+                projectDiscountInput.value = data.projectDiscount;
+                
+                invoicePages = [];
+                let remainingItems = [...data.items];
+                while (remainingItems.length > 0) {
+                    const pageItems = remainingItems.splice(0, MAX_ROWS);
+                    const pageTotals = calculatePageTotals(pageItems);
+                    const pageData = {
+                        items: pageItems,
+                        totals: pageTotals
+                    };
+                    invoicePages.push(pageData);
+                }
+                
+                currentPage = 1;
+                loadPageData(currentPage);
+                const allRows = preInvoiceTableBody.querySelectorAll('tr');
+                allRows.forEach(row => updateRow(row));
+                updatePageTotals();
+                updateGrandTotals();
+                updatePageCounter();
+                updateNavigationButtons();
+
+                isNewSubProjectMode = true;
+                isUpdateMode = false;
+                isMasterProject = false;
+                toggleEditMode(true);
+                saveButton.classList.remove('hidden');
+                editButton.classList.add('hidden');
+            };
+            
+            const toggleEditMode = (enable) => {
+                isEditing = enable;
+                const topInputs = newProjectPage.querySelectorAll('.selectors input');
+                topInputs.forEach(input => {
+                    if (isUpdateMode) {
+                        if (isMasterProject) {
+                            input.disabled = !enable;
+                        } else {
+                            if (input.id === 'project-discount') {
+                                input.disabled = !enable;
+                            } else {
+                                input.disabled = true;
+                            }
+                        }
+                        if (input.id === 'project-name-input' || input.id === 'factory-name-select') {
+                            input.disabled = true;
+                        }
+                    } else if (isNewSubProjectMode) {
+                        if (input.id === 'project-discount') {
+                            input.disabled = false;
+                        } else {
+                            input.disabled = true;
+                        }
+                    } else {
+                        if (input.id === 'project-name-input') {
+                            input.disabled = true;
+                        } else if (input.id === 'factory-name-select') {
+                            input.disabled = false;
+                        } else {
+                            input.disabled = !enable;
+                        }
+                    }
+                });
+                
+                const tableInputs = preInvoiceTableBody.querySelectorAll('input');
+                tableInputs.forEach(input => {
+                    if (isUpdateMode) {
+                        if (isMasterProject) {
+                            input.disabled = !enable;
+                        } else {
+                            if (input.classList.contains('discount-percent-input')) {
+                                input.disabled = !enable;
+                            } else {
+                                input.disabled = true;
+                            }
+                        }
+                    } else if (isNewSubProjectMode) { // Added this new condition
+                        if (input.classList.contains('discount-percent-input')) {
+                            input.disabled = !enable; // Enable/disable discount based on 'enable'
+                        } else {
+                            input.disabled = true; // Always disable other table inputs
+                        }
+                    } else {
+                        input.disabled = !enable;
+                    }
+                });
+                
+                if (isUpdateMode) {
+                    saveButton.classList.toggle('hidden', !enable);
+                    editButton.classList.toggle('hidden', enable);
+                } else {
+                    saveButton.classList.remove('hidden');
+                    editButton.classList.add('hidden');
+                }
+            };
+
+            const resetForm = () => {
+                projectNameInput.value = '';
+                projectDateInput.value = '';
+                factoryNameInput.value = 'ابرش';
+                managerNameInput.value = '';
+                managerPhoneInput.value = '';
+                projectAddressInput.value = '';
+                referrerNameInput.value = '';
+                referrerPhoneInput.value = '';
+                projectDiscountInput.value = '';
+                preInvoiceTableBody.innerHTML = '';
+                invoicePages = [];
+                currentPage = 1;
+                isUpdateMode = false;
+                isNewSubProjectMode = false;
+                isMasterProject = false;
+                toggleEditMode(true);
+                updateGrandTotals();
+                saveButton.classList.remove('hidden');
+                editButton.classList.add('hidden');
+            };
+            
+            const initializeDatepicker = () => {
+                if (typeof $.fn.pDatepicker === 'function') {
+                    $(projectDateInput).pDatepicker({
+                        format: 'YYYY/MM/DD',
+                        onSelect: function(unix) {
+                            const nextInput = document.getElementById('factory-name-select');
+                            if (nextInput) {
+                                nextInput.focus();
+                            }
+                        }
+                    });
+                } else {
+                    console.error('pDatepicker function is not available.');
+                }
+            };
+
+            const openInvoiceForm = (newProjectName) => {
+                resetForm();
+                projectNameInput.value = newProjectName;
+                currentProjectName = newProjectName;
+                isMasterProject = true;
+                
+                factoryNameInput.value = 'ابرش';
+                factoryNameInput.disabled = true;
+
+                showPage(newProjectPage);
+                for(let i=0; i<MAX_ROWS; i++) {
+                    createTableRow();
+                }
+                updatePageCounter();
+                updateNavigationButtons();
+                toggleEditMode(true);
+                
+                initializeDatepicker();
+                
+                setTimeout(() => {
+                    projectDateInput.focus();
+                }, 200);
+            };
+
+            projectButton.addEventListener('click', () => {
+                showPage(projectMenuPage);
+            });
+            backToMainButton.addEventListener('click', () => showPage(mainPage));
+            backToMenuButton.addEventListener('click', () => {
+                showPage(projectMenuPage);
+                resetForm();
+            });
+            newProjectButton.addEventListener('click', () => {
+                resetForm();
+                fetchManagersAndReferrers();
+                showPage(projectNamePage);
+                newProjectNameInput.value = '';
+                setTimeout(() => newProjectNameInput.focus(), 100);
+            });
+
+            retrieveButton.addEventListener('click', async () => {
+                // Reset the modal content before showing it
+                mainProjectSelect.innerHTML = `<option value="">انتخاب کنید...</option>`;
+                subProjectContainer.style.display = 'none';
+                subProjectList.innerHTML = '';
+                addSubProjectButton.disabled = true;
+                modalConfirmRetrieve.disabled = true;
+                selectedSubProject = null;
+
+                await fetchProjectsData();
+                showModal(retrieveProjectModal);
+            });
+
+            modalConfirmRetrieve.addEventListener('click', async () => {
+                const projectNameToRetrieve = mainProjectSelect.value.trim();
+                const factoryToRetrieve = selectedSubProject;
+                if (!projectNameToRetrieve || !factoryToRetrieve) {
+                    showErrorModal('لطفا یک پروژه اصلی و یک زیرپروژه را انتخاب کنید.');
+                    return;
+                }
+                resetForm();
+                await fetchProjectDetails(projectNameToRetrieve, factoryToRetrieve);
+                currentProjectName = projectNameToRetrieve;
+                currentFactoryName = factoryToRetrieve;
+            });
+
+            modalCancelRetrieve.addEventListener('click', () => {
+                hideAllModals();
+            });
+
+            addSubProjectButton.addEventListener('click', async () => {
+                const selectedProjectName = mainProjectSelect.value;
+                if (!selectedProjectName) {
+                    showErrorModal('لطفا ابتدا یک پروژه اصلی را انتخاب کنید.');
+                    return;
+                }
+                newSubprojectName.textContent = selectedProjectName;
+                newSubprojectFactorySelect.value = '';
+                showModal(newSubprojectModal);
+            });
+
+            modalYesAddSubproject.addEventListener('click', async () => {
+                const newFactoryName = newSubprojectFactorySelect.value.trim();
+                if (!newFactoryName) {
+                    showErrorModal('لطفا نام کارخانه را وارد کنید.');
+                    return;
+                }
+                const projectNameFromModal = newSubprojectName.textContent;
+                
+                const existingFactories = allProjectsData[projectNameFromModal] || [];
+                if(existingFactories.includes(newFactoryName)){
+                    if(confirm('برای کارخانه ' + newFactoryName + ' و پروژه ' + projectNameFromModal + ' قبلا پیش‌فاکتور ثبت شده است. آیا مایل به بازیابی آن هستید؟')) {
+                        await fetchProjectDetails(projectNameFromModal, newFactoryName);
+                        hideAllModals();
+                    } else {
+                        hideAllModals();
+                        return;
+                    }
+                }
+
+                hideAllModals();
+                resetForm();
+                currentProjectName = projectNameFromModal;
+                projectNameInput.value = projectNameFromModal;
+                factoryNameInput.value = newFactoryName;
+                
+                const baseData = await fetchProjectItems(projectNameFromModal);
+                let baseProjectItems = [];
+                if (baseData && baseData.items) {
+                    baseProjectItems = baseData.items;
+                    projectDateInput.value = baseData.projectDate || '';
+                    managerNameInput.value = baseData.managerName || '';
+                    managerPhoneInput.value = baseData.managerPhone || '';
+                    projectAddressInput.value = baseData.projectAddress || '';
+                    referrerNameInput.value = baseData.referrerName || '';
+                    referrerPhoneInput.value = baseData.referrerPhone || '';
+                    projectDiscountInput.value = baseData.projectDiscount || '';
+                }
+                
+                if (baseProjectItems.length > 0) {
+                    invoicePages = [];
+                    let remainingItems = [...baseProjectItems];
+                    while (remainingItems.length > 0) {
+                        const pageItems = remainingItems.splice(0, MAX_ROWS);
+                        const pageTotals = calculatePageTotals(pageItems);
+                        const pageData = {
+                            items: pageItems,
+                            totals: pageTotals
+                        };
+                        invoicePages.push(pageData);
+                    }
+                    
+                    currentPage = 1;
+                    loadPageData(currentPage);
+                    const allRows = preInvoiceTableBody.querySelectorAll('tr');
+                    allRows.forEach(row => updateRow(row));
+                    updatePageTotals();
+                    updateGrandTotals();
+                    updatePageCounter();
+                    updateNavigationButtons();
+
+                    isNewSubProjectMode = true;
+                    isUpdateMode = false;
+                    isMasterProject = false;
+                    toggleEditMode(true);
+                    saveButton.classList.remove('hidden');
+                    editButton.classList.add('hidden');
+
+                } else {
+                    showErrorModal('پروژه اصلی فاقد اقلام ثبت شده است.');
+                    return;
+                }
+                
+                showPage(newProjectPage);
+                initializeDatepicker();
+                
+                setTimeout(() => {
+                    projectDateInput.focus();
+                }, 200);
+            });
+            
+            modalNoAddSubproject.addEventListener('click', () => {
+                hideAllModals();
+            });
+
+            confirmProjectNameButton.addEventListener('click', () => {
+                const newProjectName = newProjectNameInput.value.trim();
+                if (newProjectName === '') {
+                    showErrorModal('لطفا نام پروژه را وارد کنید.');
+                    return;
+                }
+                
+                fetch(`${WEB_APP_URL}?action=checkProjectName&projectName=${encodeURIComponent(newProjectName)}`)
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res.result === 'exists') {
+                            showErrorModal(`برای پروژه با نام "${newProjectName}" پیش فاکتور صادر شده جهت کسب اطلاعات بیشتر از قسمت بازیابی اطلاعات وارد شوید`);
+                        } else if (res.result === 'not_exists') {
+                            isNewSubProjectMode = false;
+                            openInvoiceForm(newProjectName);
+                        } else {
+                            showErrorModal('خطا در بررسی نام پروژه: ' + (res.error || 'پاسخ نامشخص'));
+                        }
+                    })
+                    .catch(err => {
+                        showErrorModal('اشکال در ارتباط با سرور: ' + err.message);
+                        console.error('Error in checkProjectName:', err);
+                    });
+            });
+
+            backFromProjectNameButton.addEventListener('click', () => {
+                showPage(projectMenuPage);
+            });
+
+            const checkAndHandleAutocomplete = (inputElement, datalistId, phoneInput, dataList) => {
+                const inputValue = inputElement.value;
+                const datalistOptions = document.getElementById(datalistId).options;
+                const matchingOptions = Array.from(datalistOptions).filter(option => option.value.startsWith(inputValue));
+
+                if (matchingOptions.length === 1) {
+                    inputElement.value = matchingOptions[0].value;
+                    const phone = dataList[inputElement.value];
+                    if (phone) {
+                        phoneInput.value = phone;
+                    }
+                } else if (matchingOptions.length > 1) {
+                    // Let the user choose
+                } else {
+                    // No matching options, clear phone field
+                    phoneInput.value = '';
+                }
+            };
+
+            managerNameInput.addEventListener('input', () => {
+                checkAndHandleAutocomplete(managerNameInput, 'manager-names-datalist', managerPhoneInput, managersAndReferrers.managers);
+            });
+            managerNameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    managerPhoneInput.focus();
+                }
+            });
+            managerNameInput.addEventListener('change', () => {
+                const managerName = managerNameInput.value;
+                const managerPhone = managersAndReferrers.managers[managerName];
+                if (managerPhone) {
+                    managerPhoneInput.value = managerPhone;
+                } else {
+                    managerPhoneInput.value = '';
+                }
+            });
+
+            referrerNameInput.addEventListener('input', () => {
+                checkAndHandleAutocomplete(referrerNameInput, 'referrer-names-datalist', referrerPhoneInput, managersAndReferrers.referrers);
+            });
+            referrerNameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    referrerPhoneInput.focus();
+                }
+            });
+            referrerNameInput.addEventListener('change', () => {
+                const referrerName = referrerNameInput.value;
+                const referrerPhone = managersAndReferrers.referrers[referrerName];
+                if (referrerPhone) {
+                    referrerPhoneInput.value = referrerPhone;
+                } else {
+                    referrerPhoneInput.value = '';
+                }
+            });
+
+            factoryNameInput.addEventListener('change', async () => {
+                currentFactoryName = factoryNameInput.value;
+                const projectDiscount = parseFloat(projectDiscountInput.value);
+                const itemsToLoad = getPageData();
+                
+                if (itemsToLoad.length > 0) {
+                    preInvoiceTableBody.innerHTML = '';
+                    const updatedItems = itemsToLoad.map(item => {
+                        const product = productsData.find(p => p['کد'] === item.code && p['کارخانه'] === currentFactoryName);
+                        if (product) {
+                            const newBasePrice = parseFloat(product['قیمت پایه']) || 0;
+                            const newTotalPrice = newBasePrice * item.quantity;
+                            const newDiscountAmount = (newTotalPrice * (item.discountPercent || projectDiscount)) / 100;
+                            const newFinalPrice = newTotalPrice - newDiscountAmount;
+                            return {
+                                ...item,
+                                basePrice: newBasePrice,
+                                totalPrice: newTotalPrice,
+                                discountAmount: newDiscountAmount,
+                                finalPrice: newFinalPrice
+                            };
+                        } else {
+                            return item;
+                        }
+                    });
+                    
+                    invoicePages[currentPage - 1] = {items: updatedItems, totals: calculatePageTotals(updatedItems)};
+                    loadPageData(currentPage);
+                } else {
+                    populateProductDatalists();
+                    preInvoiceTableBody.innerHTML = '';
+                    for(let i=0; i<MAX_ROWS; i++) {
+                        createTableRow();
+                    }
+                }
+                updatePageTotals();
+                updateGrandTotals();
+            });
+
+            const updateAllRowsWithProjectDiscount = () => {
+                const projectDiscount = parseFloat(projectDiscountInput.value) || 0;
+                const allRows = preInvoiceTableBody.querySelectorAll('tr');
+
+                allRows.forEach(row => {
+                    const discountInput = row.querySelector('.discount-percent-input');
+                    if (discountInput) {
+                        discountInput.value = projectDiscount;
+                        updateRow(row);
+                    }
+                });
+
+                updatePageTotals();
+                updateGrandTotals();
+            };
+
+            projectDiscountInput.addEventListener('input', updateAllRowsWithProjectDiscount);
+            
+            editButton.addEventListener('click', () => {
+                toggleEditMode(true);
+            });
+
+            saveButton.addEventListener('click', async () => {
+                if (isUpdateMode && isMasterProject) {
+                    const hasSubProjects = await checkIfProjectHasSubProjects(currentProjectName);
+                    if (hasSubProjects) {
+                        hideAllModals();
+                        showModal(confirmUpdateModal);
+                        return;
+                    }
+                }
+                showModal(saveModal);
+            });
+
+            modalYesNextPage.addEventListener('click', () => startNewPage());
+            modalNoNextPage.addEventListener('click', () => {
+                hideAllModals();
+                showModal(saveModal);
+            });
+            
+            modalYesSave.addEventListener('click', async () => {
+                lastAction = 'save';
+                await saveData(false);
+            });
+
+            modalYesUpdate.addEventListener('click', async () => {
+                lastAction = 'save';
+                await saveData(true);
+            });
+
+            const saveData = async (updateSubProjects = false) => {
+                saveCurrentPageData();
+
+                const filledItems = invoicePages.reduce((acc, page) => acc.concat(page.items), []);
+                
+                if (filledItems.length === 0) {
+                    showErrorModal('لطفاً حداقل یک کالا را وارد کنید.');
+                    return;
+                }
+
+                const finalInvoiceData = {
+                    action: 'saveData',
+                    projectName: projectNameInput.value,
+                    projectDate: projectDateInput.value,
+                    factoryName: factoryNameInput.value,
+                    managerName: managerNameInput.value,
+                    managerPhone: managerPhoneInput.value,
+                    projectAddress: projectAddressInput.value,
+                    referrerName: referrerNameInput.value,
+                    referrerPhone: referrerPhoneInput.value,
+                    projectDiscount: parseFloat(projectDiscountInput.value || 0),
+                    grandTotals: {
+                        totalPrice: parseFloat(document.getElementById('grand-total-price').dataset.value),
+                        totalDiscount: parseFloat(document.getElementById('grand-total-discount').dataset.value),
+                        finalPrice: parseFloat(document.getElementById('grand-final-price').dataset.value)
+                    },
+                    items: filledItems,
+                    isUpdate: isUpdateMode,
+                    isMasterUpdate: isMasterProject,
+                    updateSubProjects: updateSubProjects
+                };
+                
+                try {
+                    const response = await fetch(WEB_APP_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'text/plain;charset=utf-8'
+                        },
+                        body: JSON.stringify(finalInvoiceData)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.result === 'success') {
+                        let message;
+                        if (!isUpdateMode) {
+                            message = 'پیش‌فاکتور با موفقیت ثبت گردید.';
+                        } else if (isUpdateMode && !updateSubProjects) {
+                            message = 'تغییرات مد نظر اعمال شده با موفقیت ثبت گردید.';
+                        } else {
+                            message = 'تغییرات مدنظر در کلیه پیش‌فاکتورهای صادره این پروژه اعمال شده و با موفقیت ثبت گردید.';
+                        }
+                        hideAllModals();
+                        showErrorModal(message);
+                    } else {
+                        showErrorModal('خطا در ذخیره‌سازی: ' + result.error);
+                    }
+                } catch (error) {
+                    showErrorModal('خطا در برقراری ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.');
+                    console.error('Error:', error);
+                }
+            };
+            
+            modalNoSave.addEventListener('click', () => {
+                hideAllModals();
+            });
+            
+            modalNoUpdate.addEventListener('click', () => {
+                hideAllModals();
+            });
+
+            modalCloseError.addEventListener('click', () => {
+                hideAllModals();
+                if (lastAction === 'save') {
+                    toggleEditMode(false);
+                    showPage(projectMenuPage);
+                }
+                lastAction = '';
+            });
+
+            prevPageButton.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    saveCurrentPageData();
+                    loadPageData(currentPage - 1);
+                }
+            });
+
+            nextPageButton.addEventListener('click', () => {
+                const filledRowsOnCurrentPage = getPageData().length;
+                const totalPages = invoicePages.length + (filledRowsOnCurrentPage > 0 ? 1 : 0);
+                if (currentPage < totalPages) {
+                    saveCurrentPageData();
+                    loadPageData(currentPage + 1);
+                } else if (filledRowsOnCurrentPage > 0) {
+                    showModal(nextPageModal);
+                }
+            });
+            
+            fetchProductData();
+            fetchManagersAndReferrers();
+        });
+    }
+</script>
+<datalist id="factory-datalist"></datalist>
+<datalist id="code-datalist"></datalist>
+<datalist id="name-datalist"></datalist>
+<datalist id="manager-names-datalist"></datalist>
+<datalist id="referrer-names-datalist"></datalist>
+</body>
+</html>
